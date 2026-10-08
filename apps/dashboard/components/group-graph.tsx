@@ -21,7 +21,7 @@ export function GroupGraph({
   onSelect: (wallet: string) => void;
 }) {
   const ops = [...overview.operators].sort((a, b) => b.wallets.length - a.wallets.length);
-  const widths = ops.map((o) => (o.wallets.length > 1 ? Math.max(300, o.wallets.length * 46) : 140));
+  const widths = ops.map((o) => (o.wallets.length > 1 ? Math.max(300, o.wallets.length * 64) : 140));
   const total = widths.reduce((s, w) => s + w, 0);
   const W = Math.max(total + 40, 600);
   const H = 300;
@@ -61,7 +61,7 @@ export function GroupGraph({
               return (
                 <g key={p.wal} onClick={() => onSelect(p.wal)} style={{ cursor: 'pointer' }}>
                   <circle cx={p.x} cy={p.y} r={isSel ? 13 : 10} fill={isSel ? color : '#fff'} stroke={color} strokeWidth={3} />
-                  <text x={p.x} y={p.y + 30} textAnchor="middle" fontSize="10.5" fontFamily="var(--font-mono)" fill="#807574">
+                  <text x={p.x} y={p.y + (wallets.length > 4 && wallets.indexOf(p) % 2 ? 44 : 30)} textAnchor="middle" fontSize="10.5" fontFamily="var(--font-mono)" fill="#807574">
                     {short(p.wal, 2)}
                   </text>
                 </g>

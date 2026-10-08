@@ -32,3 +32,8 @@ Results of the verification checklist in the PRD. Each check has a fallback, so 
 - Mainnet independent 1 is the team wallet; its first USDC came from a bridge payout address with 2,606 recipients (a hub), so it is Independent.
 - Mainnet independents 2 and 3 get their first USDC by swapping their own MON on Uniswap v3 (WMON/USDC 0.3% pool), so the first USDC sender is a public pool.
 - Finding: Nansen's `related-wallets` "First Funder" for the team wallet differs from the first USDC sender found by HyperSync; it appears to track the first native-token funder. The Nansen provider must take the first USDC funder from `transactions`, or the agreement check would report a false disagreement.
+
+## Gate 2 (reached 9 Oct)
+
+- **Judge simulation runs end to end on testnet: pass.** `POST /v1/sim/run` sent 39 real x402 payments (13 wallets x 3 calls) through the seller, the Argus middleware and the Monad facilitator in 54 s, in a fresh promo namespace. The farm of 10 received exactly 20 promo calls in total (one shared allowance); each independent received its own promo.
+- **Dashboard shows 13 wallets as 4 customers: pass.** `GET /v1/overview?network=testnet` returns 13 paying wallets, 4 customers (1 operator of 10, 3 independents); verdicts published to the testnet registry.

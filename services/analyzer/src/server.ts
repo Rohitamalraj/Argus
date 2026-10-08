@@ -2,11 +2,12 @@
 import { knownHubsFor, makeConfig } from '@argus/scoring';
 import { createApi } from './api.ts';
 import { Assessor, type WalletIntel } from './assessor.ts';
-import { attestorKey, env, sellerAddresses } from './env.ts';
+import { ROOT, attestorKey, env, sellerAddresses } from './env.ts';
 import { NETWORKS, type Network } from './networks.ts';
 import { ChainDataProvider } from './providers/chain.ts';
 import { HyperSyncClient } from './providers/hypersync.ts';
 import { Publisher } from './publisher.ts';
+import { SimRunner } from './sim.ts';
 import { LocalKeySigner } from './signer.ts';
 import { Store } from './store.ts';
 
@@ -38,4 +39,5 @@ for (const n of networks) {
   console.log(`[publish ${n}] on, attestor ${signer.address}, registry ${registry}`);
 }
 
-createApi({ store, assessor }).listen(env.port, () => console.log(`Argus analyzer on http://localhost:${env.port}`));
+const sim = new SimRunner({ root: ROOT, sellerUrl: process.env.SIM_SELLER_URL ?? 'http://localhost:4021' });
+createApi({ store, assessor, sim }).listen(env.port, () => console.log(`Argus analyzer on http://localhost:${env.port}`));

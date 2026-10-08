@@ -3,11 +3,13 @@ import { isAddress } from 'viem';
 import type { Address } from '@argus/scoring';
 import type { Assessor } from './assessor.ts';
 import type { Network } from './networks.ts';
+import type { SimRunner } from './sim.ts';
 import type { Store } from './store.ts';
 
 export interface ApiDeps {
   store: Store;
   assessor: Assessor;
+  sim?: SimRunner;
   now?: () => number;
 }
 
@@ -32,7 +34,7 @@ const wrap =
   (fn: (req: Request, res: Response) => Promise<unknown>) => (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
 
-export function createApi({ store, assessor, now = () => Math.floor(Date.now() / 1000) }: ApiDeps) {
+export function createApi({ store, assessor, sim, now = () => Math.floor(Date.now() / 1000) }: ApiDeps) {
   const app = express();
   app.use(express.json({ limit: '100kb' }));
   app.use((_req, res, next) => {
@@ -115,6 +117,20 @@ export function createApi({ store, assessor, now = () => Math.floor(Date.now() /
         wallets,
         costs: store.costs().filter((c) => c.network === net),
       });
+    }),
+  );
+
+  /** AN-12: judge simulation on testnet. Concurrent clicks share one run; at most one run a minute. */
+  app.post(
+    '/v1/sim/run',
+    wrap(async (_req, res) => {
+      if (!sim || !sim.available()) throw new HttpError(503, 'simulation is not set up on this server');
+      const r = sim.run();
+      if ('tooSoon' in r) {
+        res.status(429).json({ ok: false, error: `A run just finished; try again in ${r.tooSoon} s`, last: r.last });
+        return;
+      }
+      res.json({ ...(await r.result), joined: r.joined });
     }),
   );
 
