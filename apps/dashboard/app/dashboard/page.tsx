@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Footer, Nav } from '@/components/chrome';
+import { EnvioPanel } from '@/components/envio-panel';
 import { GroupGraph } from '@/components/group-graph';
 import { ANALYZER_URL, explorer, getOverview, short, tierClass, type Network, type Overview, type Verdict } from '@/lib/api';
 
@@ -220,6 +221,8 @@ export default function Dashboard() {
               </dl>
               {network === 'mainnet' && <p className="powered" style={{ marginTop: 12 }}>Deep checks: Powered by Nansen API</p>}
             </div>
+
+            <EnvioPanel network={network} />
 
             <div className="card card-solid" id="simulate">
               <div className="panel-title">
