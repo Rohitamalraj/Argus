@@ -1,0 +1,18 @@
+{
+  "name": "@argus/analyzer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Argus analyzer: providers, grouping, scoring, signing, API.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "assess": "tsx src/cli/assess.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@argus/scoring": "*",
+    "dotenv": "^16.4.7",
+    "viem": "^2.21.0"
+  }
+}

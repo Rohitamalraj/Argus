@@ -34,6 +34,20 @@ export function assembleInput(
   }
   const F = funding.from;
   const f = lc(F);
+  const funderRecipientCount = countHubRecipients(transfers, F, cfg.hubMinTransfer);
+
+  // A hub never links anyone, so its recipients are not a group.
+  if (cfg.knownHubs.has(f) || funderRecipientCount > cfg.hubRecipientThreshold) {
+    return {
+      chainId,
+      wallet,
+      firstFunder: F,
+      funderRecipientCount,
+      group: [{ wallet, firstFundedAt: funding.timestamp }],
+      funderTransfers: [funding],
+      groupOutflows: [],
+    };
+  }
 
   const recipients = new Set(transfers.filter((t) => lc(t.from) === f).map((t) => lc(t.to)));
   recipients.add(lc(wallet));
@@ -51,7 +65,7 @@ export function assembleInput(
     chainId,
     wallet,
     firstFunder: F,
-    funderRecipientCount: countHubRecipients(transfers, F, cfg.hubMinTransfer),
+    funderRecipientCount,
     group,
     funderTransfers: transfers.filter((t) => lc(t.from) === f && members.has(lc(t.to))),
     groupOutflows: transfers.filter((t) => members.has(lc(t.from))),

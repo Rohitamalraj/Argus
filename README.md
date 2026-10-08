@@ -4,6 +4,8 @@ Argus spots when many wallets paying an x402 seller belong to one operator, so p
 
 It finds who first funded each paying wallet, groups wallets seeded by the same non-hub funder, and lets the seller apply one promo per operator instead of one per wallet. Verdicts use only public chain evidence, so every seller gets the same answer, and they are published to an on-chain registry on Monad.
 
+> Testnet registry: [`0xd60EBFbc9955951322e9410Ec833bA040E9dB8dE`](https://testnet.monadvision.com/address/0xd60EBFbc9955951322e9410Ec833bA040E9dB8dE)
+
 > Status: in development for the Monad Metropolis hackathon (Track 04). See [docs/PRD.md](docs/PRD.md) for the full spec.
 
 ## Tiers
