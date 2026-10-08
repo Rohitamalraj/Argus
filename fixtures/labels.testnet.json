@@ -1,0 +1,106 @@
+{
+  "network": "testnet",
+  "createdAt": "2026-10-08T20:23:05.725Z",
+  "expected": {
+    "payingWallets": 13,
+    "customers": 4
+  },
+  "wallets": [
+    {
+      "role": "funder",
+      "label": "F",
+      "address": "0xA341Fda19a26582932686bb3Ccbf68243F9c96E4",
+      "expectedTier": null
+    },
+    {
+      "role": "farm",
+      "label": "farm-01",
+      "address": "0x8E42867836402110Cd005f5e39c182BBce59045e",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-02",
+      "address": "0x2a297E336C07fCf284f1DB57896d6cEca9557af7",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-03",
+      "address": "0xE4B4D4F496a3EF4Be205b89354304695C197D7c0",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-04",
+      "address": "0x6e53909A8928AfbCf7a8A5B3f30E20E58dbBCDC6",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-05",
+      "address": "0xc5779CF75c283E33cE5F416D0eD89Ddab5a2C2A9",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-06",
+      "address": "0x7cbf8820e66c799517c58DF77848F183C0F77e7A",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-07",
+      "address": "0xF3D692d2efb9E54d8CB0C77cF886D2bA8674B8fe",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-08",
+      "address": "0x6A73851c57eB5Ec4110CF8c53B9EF1e1FED92d90",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-09",
+      "address": "0xAcaa8F34899fdeAb5c56ea2042bf5d0C3EfC4833",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "farm",
+      "label": "farm-10",
+      "address": "0x53A276de9a61742AF3944ef39E8B2d3A75175fb9",
+      "expectedTier": "Linked"
+    },
+    {
+      "role": "independent",
+      "label": "indie-1",
+      "address": "0xD1FE0a30cfCe1975659808fDEc15E01aF960c08d",
+      "expectedTier": "Independent"
+    },
+    {
+      "role": "independent",
+      "label": "indie-2",
+      "address": "0x08d3046c24994A7994562588eFA9e77A26f144c9",
+      "expectedTier": "Independent"
+    },
+    {
+      "role": "independent",
+      "label": "indie-3",
+      "address": "0x650Ac8c4E8Aaf75d9f64f740fae81e6c84367B8c",
+      "expectedTier": "Independent"
+    },
+    {
+      "role": "seller",
+      "label": "seller-payto",
+      "address": "0x4287d6fdE3B7eA6d769648F030a27178f490C075",
+      "expectedTier": null
+    },
+    {
+      "role": "attestor",
+      "label": "analyzer-attestor",
+      "address": "0x6E7A4132c27248F56B4aEeE2513d6655370a323b",
+      "expectedTier": null
+    }
+  ]
+}

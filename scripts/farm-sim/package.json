@@ -1,0 +1,19 @@
+{
+  "name": "@argus/farm-sim",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Creates and funds the demo wallets (1 funder, 10 farm, 3 independents) and writes ground-truth labels.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "create": "tsx src/create.ts",
+    "status": "tsx src/status.ts",
+    "fund": "tsx src/fund.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@argus/scoring": "*",
+    "dotenv": "^16.4.7",
+    "viem": "^2.21.0"
+  }
+}

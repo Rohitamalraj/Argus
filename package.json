@@ -1,0 +1,31 @@
+{
+  "name": "argus",
+  "private": true,
+  "description": "Argus spots when many wallets paying an x402 seller belong to one operator, so promos go to real customers.",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "services/*",
+    "apps/*",
+    "scripts/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspaces --if-present && npm run test:contracts",
+    "test:contracts": "cd contracts && forge test",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "esbuild@0.21.5": true
+  }
+}
