@@ -164,7 +164,7 @@ button {
 .hero-inner {
   position: relative;
   z-index: 1;
-  padding-top: 170px;
+  padding-top: 110px;
   padding-bottom: 64px;
 }
 .hero h1 {
@@ -614,7 +614,7 @@ h3.title {
     --gutter: 16px;
   }
   .hero-inner {
-    padding-top: 110px;
+    padding-top: 72px;
   }
   .lede {
     font-size: 15px;
