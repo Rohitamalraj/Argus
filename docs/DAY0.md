@@ -21,6 +21,6 @@ Results of the verification checklist in the PRD. Each check has a fallback, so 
 
 - **HyperSync returns the testnet farm's funder: pass.** `npm run assess -w @argus/analyzer -- --network testnet --labels` gives 10 farm wallets Linked (high, one operator, funder `0xa341…96e4`), 3 faucet-funded wallets Independent (high), 13 wallets to 4 customers, 13/13 against ground truth, in 6 HyperSync queries and about 3 s.
 - Registry on Monad testnet: `0xd60EBFbc9955951322e9410Ec833bA040E9dB8dE` (source verified on Sourcify).
-- One Nansen x402 call on mainnet: open.
+- **One Nansen x402 call on mainnet: pass.** `npm run nansen-x402 -w @argus/analyzer` paid 0.01 USDC on Monad mainnet (`eip155:143`) from the analyzer wallet, tx `0x06f762f1df16191108aaeae21841489a8a30e3aa1dc41f78c7437490104bc302`; HTTP 200 with the First Funder relation. No API key sent.
 - SG-4 (Dynamic typed-data policies): answered from the docs, policies do not cover EVM typed data (see V6).
 - Nansen accepts x402 payment in USDC on Monad mainnet (`eip155:143`), 0.01 USDC per call.

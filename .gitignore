@@ -14,3 +14,4 @@ PayerShield*.md
 # Tooling
 .vitest/
 *.log
+*.local.ts
