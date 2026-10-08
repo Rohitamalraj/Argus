@@ -10,10 +10,13 @@
     "status": "tsx src/status.ts",
     "fund": "tsx src/fund.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "swap": "tsx src/swap.ts"
+    "swap": "tsx src/swap.ts",
+    "pay": "tsx src/pay.ts"
   },
   "dependencies": {
     "@argus/scoring": "*",
+    "@x402/evm": "^2.28.0",
+    "@x402/fetch": "^2.28.0",
     "dotenv": "^16.4.7",
     "viem": "^2.21.0"
   }

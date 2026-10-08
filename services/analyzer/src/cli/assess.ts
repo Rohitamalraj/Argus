@@ -34,7 +34,7 @@ if (argv.includes('--labels')) {
 
 const cfg = makeConfig({ knownHubs: knownHubsFor(net.chainId), closureExclude: sellers });
 const salt = (process.env.ATTESTOR_SALT ?? '0x' + '00'.repeat(32)) as Hex;
-const provider = new ChainDataProvider(new HyperSyncClient(net.hypersync, net.usdc, token), net.chainId, cfg);
+const provider = new ChainDataProvider(new HyperSyncClient(net.hypersync, net.usdc, token, net.usdcStartBlock), net.chainId, cfg);
 
 let correct = 0;
 const operators = new Set<string>();

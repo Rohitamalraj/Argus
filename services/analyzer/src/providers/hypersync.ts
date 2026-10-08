@@ -33,16 +33,26 @@ export class HyperSyncClient {
     private readonly url: string,
     private readonly token: Address,
     private readonly apiToken: string,
+    /** First block with a USDC transfer; nothing earlier needs scanning. */
+    private readonly startBlock = 0,
   ) {}
 
   async transfers(q: TransferQuery): Promise<Transfer[]> {
-    const topics: string[][] = [[TRANSFER_TOPIC], (q.from ?? []).map(pad), (q.to ?? []).map(pad)];
+    return this.transfersAny([q], q.maxTransfers, q.fromBlock);
+  }
+
+  /** Transfers matching any of the selections, in one paged query (one rate-limit unit per page). */
+  async transfersAny(selections: Omit<TransferQuery, 'fromBlock' | 'maxTransfers'>[], maxTransfers?: number, startBlock?: number): Promise<Transfer[]> {
+    const logs = selections.map((s) => ({
+      address: [this.token],
+      topics: [[TRANSFER_TOPIC], (s.from ?? []).map(pad), (s.to ?? []).map(pad)],
+    }));
     const out: Transfer[] = [];
-    let fromBlock = q.fromBlock ?? 0;
+    let fromBlock = startBlock ?? this.startBlock;
     for (;;) {
       const res = await this.query({
         from_block: fromBlock,
-        logs: [{ address: [this.token], topics }],
+        logs,
         field_selection: {
           log: ['block_number', 'log_index', 'transaction_hash', 'topic1', 'topic2', 'data'],
           block: ['number', 'timestamp'],
@@ -61,7 +71,7 @@ export class HyperSyncClient {
           });
         }
       }
-      if (q.maxTransfers && out.length >= q.maxTransfers) break;
+      if (maxTransfers && out.length >= maxTransfers) break;
       if (res.next_block > res.archive_height || res.next_block <= fromBlock) break;
       fromBlock = res.next_block;
     }

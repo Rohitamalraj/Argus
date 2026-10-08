@@ -67,13 +67,10 @@ export class ChainDataProvider {
     const recipients = [
       ...new Set(fOut.filter((t) => bespokeSet.has(lc(t.from)) && t.amount >= this.cfg.minFunding).map((t) => lc(t.to))),
     ];
-    const [inR, outR] = await Promise.all([
-      this.many((part) => this.hs.transfers({ to: part }), recipients),
-      this.many((part) => this.hs.transfers({ from: part }), recipients),
-    ]);
+    const inOutR = await this.many((part) => this.hs.transfersAny([{ to: part }, { from: part }]), recipients);
 
     const seen = new Set<string>();
-    const all = [...inbound, ...fOut, ...inR, ...outR].filter((t) => (seen.has(key(t)) ? false : (seen.add(key(t)), true)));
+    const all = [...inbound, ...fOut, ...inOutR].filter((t) => (seen.has(key(t)) ? false : (seen.add(key(t)), true)));
     return { inputs: wallets.map((w) => assembleInput(this.chainId, w, all, this.cfg)), transfers: all };
   }
 

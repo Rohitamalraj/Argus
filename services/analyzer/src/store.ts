@@ -61,10 +61,17 @@ export class Store {
     if (v.precomputed && existing && !existing.precomputed && existing.expiresAt > now) return;
     this.db
       .prepare(
-        `INSERT INTO verdicts (network, wallet, json, expires_at, paid) VALUES (?, ?, ?, ?, 0)
-         ON CONFLICT (network, wallet) DO UPDATE SET json = excluded.json, expires_at = excluded.expires_at`,
+        `INSERT INTO verdicts (network, wallet, json, expires_at, paid) VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT (network, wallet) DO UPDATE SET json = excluded.json, expires_at = excluded.expires_at,
+           paid = MAX(paid, excluded.paid)`,
       )
-      .run(v.network, v.wallet.toLowerCase(), JSON.stringify({ ...v, wallet: v.wallet.toLowerCase() }), v.expiresAt);
+      .run(
+        v.network,
+        v.wallet.toLowerCase(),
+        JSON.stringify({ ...v, wallet: v.wallet.toLowerCase() }),
+        v.expiresAt,
+        this.hasPaid(v.network, v.wallet) ? 1 : 0,
+      );
   }
 
   markPaid(network: Network, wallet: Address, seller: string, ts: number): void {

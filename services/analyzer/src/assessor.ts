@@ -42,6 +42,7 @@ type Pending = { wallet: Address; resolve: (v: VerdictRecord) => void; reject: (
  */
 export class Assessor {
   private queues = new Map<Network, Pending[]>();
+  private inflight = new Map<string, Promise<VerdictRecord>>();
   private timers = new Map<Network, NodeJS.Timeout>();
   private readonly ttl: number;
   private readonly window: number;
@@ -57,13 +58,18 @@ export class Assessor {
     return this.o.configs?.[network] ?? makeConfig({ knownHubs: knownHubsFor(NETWORKS[network].chainId) });
   }
 
-  /** Cached verdict if still fresh (AN-11), unless `fresh` is set. */
+  /** Cached verdict if still fresh (AN-11), unless `fresh` is set. A wallet already being assessed shares that run. */
   async assess(network: Network, wallets: Address[], fresh = false): Promise<VerdictRecord[]> {
     return Promise.all(
       wallets.map((w) => {
         const cached = this.o.store.getVerdict(network, w);
         if (!fresh && cached && cached.expiresAt > this.now()) return cached;
-        return this.enqueue(network, w);
+        const key = `${network}:${w.toLowerCase()}`;
+        const running = this.inflight.get(key);
+        if (running) return running;
+        const p = this.enqueue(network, w).finally(() => this.inflight.delete(key));
+        this.inflight.set(key, p);
+        return p;
       }),
     );
   }

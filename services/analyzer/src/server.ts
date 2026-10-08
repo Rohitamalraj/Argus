@@ -17,7 +17,7 @@ const networks: Network[] = ['testnet', 'mainnet'];
 const configFor = (n: Network) => makeConfig({ knownHubs: knownHubsFor(NETWORKS[n].chainId), closureExclude: sellerAddresses(n) });
 const configs = { testnet: configFor('testnet'), mainnet: configFor('mainnet') };
 const providerFor = (n: Network): WalletIntel =>
-  new ChainDataProvider(new HyperSyncClient(NETWORKS[n].hypersync, NETWORKS[n].usdc, env.envioToken), NETWORKS[n].chainId, configs[n]);
+  new ChainDataProvider(new HyperSyncClient(NETWORKS[n].hypersync, NETWORKS[n].usdc, env.envioToken, NETWORKS[n].usdcStartBlock), NETWORKS[n].chainId, configs[n]);
 const providers = { testnet: providerFor('testnet'), mainnet: providerFor('mainnet') };
 
 const assessor = new Assessor({ store, salt: env.salt, providers, configs });

@@ -15,9 +15,11 @@ class FakeIntel implements WalletIntel {
   readonly name = 'fake-chain';
   calls = 0;
   rounds = 0;
+  delayMs = 0;
   constructor(private readonly ledger: Transfer[]) {}
   async gatherMany(wallets: Address[]) {
     this.rounds++;
+    if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     this.calls += 4;
     return { inputs: wallets.map((w) => assembleInput(CHAIN, w, this.ledger, cfg)), transfers: this.ledger };
   }
@@ -51,6 +53,24 @@ describe('assessor', () => {
     // the next fleet wallet is served from cache, no provider call
     await assessor.assess('testnet', [f.wallets[7]!]);
     expect(intel.rounds).toBe(1);
+  });
+
+  it('a wallet already being assessed shares the running assessment', async () => {
+    const { f, intel, assessor } = setup();
+    intel.delayMs = 150;
+    const first = assessor.assess('testnet', [f.wallets[0]!]);
+    await new Promise((r) => setTimeout(r, 40)); // past the batch window: would start a second round
+    const second = assessor.assess('testnet', [f.wallets[0]!], true);
+    await Promise.all([first, second]);
+    expect(intel.rounds).toBe(1);
+  });
+
+  it('a wallet that paid before its first verdict is stored as paid', async () => {
+    const { f, store, assessor } = setup();
+    store.markPaid('testnet', f.wallets[4]!, 'demo', T0);
+    await assessor.assess('testnet', [f.wallets[4]!]);
+    expect(store.getVerdict('testnet', f.wallets[4]!)!.paid).toBe(true);
+    expect(store.pendingPublish('testnet').map((v) => v.wallet)).toContain(f.wallets[4]!.toLowerCase());
   });
 
   it('a fresh check replaces a pre-computed verdict', async () => {
