@@ -4,7 +4,7 @@ Results of the verification checklist in the PRD. Each check has a fallback, so 
 
 | ID | Check | Result | Date |
 | --- | --- | --- | --- |
-| V1 | Can `@x402/express` set a different price per payer? | Open | |
+| V1 | Can `@x402/express` set a different price per payer? | **Pass.** `PaymentOption.price` accepts a function of the request context (headers and the payment header), re-evaluated on the paid retry; `x402ResourceServer.onAfterSettle` gives the signed payload for promo counting. The Monad facilitator lists `exact` on eip155:143 and eip155:10143 | 2026-10-09 |
 | V2 | Can HyperIndex filter USDC transfers to the seller wallets only? | Open | |
 | V3 | How long does Nansen take to see a new Monad wallet? | Open. A wallet bridged in on 2026-10-08 19:57 UTC already had its First Funder in `related-wallets` on 2026-10-09 | 2026-10-09 |
 | V4 | HyperSync mainnet URL, and is an API token needed? | **Pass.** `https://monad.hypersync.xyz` (mainnet) and `https://monad-testnet.hypersync.xyz` both answer; queries need a bearer token (bad token returns 401), free from envio.dev. Free tier is 15,000 cost units per 60 s at about 1,000 per query, so the provider batches all wallets (6 queries for the 13-wallet demo) | 2026-10-09 |

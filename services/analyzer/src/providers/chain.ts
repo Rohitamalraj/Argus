@@ -37,10 +37,11 @@ export class ChainDataProvider {
   }
 
   async gather(wallet: Address): Promise<AssessmentInput> {
-    return (await this.gatherMany([wallet]))[0]!;
+    return (await this.gatherMany([wallet])).inputs[0]!;
   }
 
-  async gatherMany(wallets: Address[]): Promise<AssessmentInput[]> {
+  /** Inputs for the requested wallets, plus the transfers so callers can assess other group members. */
+  async gatherMany(wallets: Address[]): Promise<{ inputs: AssessmentInput[]; transfers: Transfer[] }> {
     const targets = [...new Set(wallets.map(lc))];
 
     // 1. Inbound USDC to every target: gives each first funder F.
@@ -73,7 +74,7 @@ export class ChainDataProvider {
 
     const seen = new Set<string>();
     const all = [...inbound, ...fOut, ...inR, ...outR].filter((t) => (seen.has(key(t)) ? false : (seen.add(key(t)), true)));
-    return wallets.map((w) => assembleInput(this.chainId, w, all, this.cfg));
+    return { inputs: wallets.map((w) => assembleInput(this.chainId, w, all, this.cfg)), transfers: all };
   }
 
   private async many(fn: (part: Address[]) => Promise<Transfer[]>, addrs: Address[]): Promise<Transfer[]> {

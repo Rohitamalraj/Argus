@@ -39,7 +39,7 @@ const provider = new ChainDataProvider(new HyperSyncClient(net.hypersync, net.us
 let correct = 0;
 const operators = new Set<string>();
 const started = Date.now();
-const inputs = await provider.gatherMany(targets.map((t) => t.address));
+const { inputs } = await provider.gatherMany(targets.map((t) => t.address));
 const elapsed = Date.now() - started;
 for (const [i, t] of targets.entries()) {
   const d = decide(inputs[i]!, salt, cfg);
