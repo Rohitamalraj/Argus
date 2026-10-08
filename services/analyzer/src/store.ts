@@ -94,6 +94,14 @@ export class Store {
       .map(({ v }) => ({ ...v, paid: true }));
   }
 
+  /** Verdicts of wallets that paid a seller, for the dashboard. */
+  paidVerdicts(network: Network): VerdictRecord[] {
+    const rows = this.db
+      .prepare('SELECT json, attestation_tx FROM verdicts WHERE network = ? AND paid = 1')
+      .all(network) as { json: string; attestation_tx: string | null }[];
+    return rows.map((r) => ({ ...(JSON.parse(r.json) as VerdictRecord), paid: true, ...(r.attestation_tx ? { attestationTx: r.attestation_tx as Hex } : {}) }));
+  }
+
   markPublished(network: Network, wallets: VerdictRecord[], tx: Hex): void {
     const stmt = this.db.prepare('UPDATE verdicts SET published_key = ?, attestation_tx = ? WHERE network = ? AND wallet = ?');
     for (const v of wallets) stmt.run(publishKey(v), tx, network, v.wallet.toLowerCase());

@@ -16,3 +16,6 @@ PayerShield*.md
 *.log
 *.local.ts
 data/
+.next/
+next-env.d.ts
+*.tsbuildinfo

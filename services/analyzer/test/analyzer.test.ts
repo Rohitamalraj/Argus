@@ -154,3 +154,13 @@ describe('publishing (AN-7)', () => {
     expect(store.pendingPublish('testnet')).toHaveLength(1);
   });
 });
+
+describe('overview (DB-1)', () => {
+  it('counts 13 paying wallets as 4 customers', async () => {
+    const { f, ind, app } = setup();
+    for (const w of [...f.wallets, ...ind.wallets]) await request(app).post('/v1/paid').send({ network: 'testnet', wallet: w, seller: 'demo' });
+    const r = await request(app).get('/v1/overview?network=testnet');
+    expect(r.body.counts).toEqual({ rawWallets: 13, customers: 4, operators: 1, linked: 10, independent: 3, unclear: 0 });
+    expect(r.body.operators).toHaveLength(4);
+  });
+});
