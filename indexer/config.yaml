@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+name: argus-indexer
+description: Argus verdicts (PayerAttestations) and x402 seller payments on Monad
+address_format: lowercase
+contracts:
+  - name: PayerAttestations
+    events:
+      - event: "Attested(address indexed wallet, address indexed attestor, bytes32 indexed operatorId, uint8 tier, uint64 expiresAt)"
+  - name: USDC
+    events:
+      - event: "Transfer(address indexed from, address indexed to, uint256 value)"
+chains:
+  - id: 143 # Monad mainnet
+    start_block: 111713054 # registry deployment
+    contracts:
+      - name: PayerAttestations
+        address: "0x151e488618FC0F79F7f91447351174Fb8D98cE98"
+      - name: USDC
+        address: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+  - id: 10143 # Monad testnet
+    start_block: 69351670 # registry deployment
+    contracts:
+      - name: PayerAttestations
+        address: "0xd60EBFbc9955951322e9410Ec833bA040E9dB8dE"
+      - name: USDC
+        address: "0x534b2f3A21130d7a60830c2Df862319e593943A3"

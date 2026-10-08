@@ -1,0 +1,59 @@
+# Argus indexer schema (PRD: Envio schema). Ids are prefixed with the chain id.
+
+"""Latest verdict for a wallet from one attestor."""
+type Verdict {
+  id: ID! # chainId-wallet-attestor
+  chainId: Int!
+  wallet: String! @index
+  attestor: String!
+  operatorId: String! @index
+  tier: Int!
+  tierName: String!
+  expiresAt: BigInt!
+  attestedAt: Int!
+  txHash: String!
+  updates: Int!
+}
+
+"""A customer as one attestor sees it: Linked wallets of one funder share an operator."""
+type Operator {
+  id: ID! # chainId-attestor-operatorId
+  chainId: Int!
+  attestor: String!
+  operatorId: String!
+  tierName: String!
+  walletCount: Int!
+  linkedCount: Int!
+  lastAttestedAt: Int!
+}
+
+"""A USDC payment to a demo seller (x402 settlement)."""
+type SellerPayment {
+  id: ID! # chainId-block-logIndex
+  chainId: Int!
+  seller: String! @index
+  payer: String! @index
+  amount: BigInt!
+  ts: Int!
+  txHash: String!
+}
+
+type Payer {
+  id: ID! # chainId-seller-wallet
+  chainId: Int!
+  seller: String!
+  wallet: String!
+  payments: Int!
+  totalPaid: BigInt!
+  firstPaidAt: Int!
+  lastPaidAt: Int!
+}
+
+type SellerStats {
+  id: ID! # chainId-seller
+  chainId: Int!
+  seller: String!
+  paymentCount: Int!
+  distinctPayers: Int!
+  totalReceived: BigInt!
+}
