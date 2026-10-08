@@ -9,7 +9,8 @@
     "create": "tsx src/create.ts",
     "status": "tsx src/status.ts",
     "fund": "tsx src/fund.ts",
-    "typecheck": "tsc -p tsconfig.json"
+    "typecheck": "tsc -p tsconfig.json",
+    "swap": "tsx src/swap.ts"
   },
   "dependencies": {
     "@argus/scoring": "*",

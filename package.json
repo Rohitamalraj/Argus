@@ -13,7 +13,8 @@
   "scripts": {
     "test": "npm run test --workspaces --if-present && npm run test:contracts",
     "test:contracts": "cd contracts && forge test",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "deploy:registry": "node scripts/deploy-registry.mjs"
   },
   "engines": {
     "node": ">=20"

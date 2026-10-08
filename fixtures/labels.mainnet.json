@@ -75,8 +75,9 @@
     {
       "role": "independent",
       "label": "indie-1",
-      "address": "0x844cF71dC8Bcd82B03436A3eeaa745363C08697d",
-      "expectedTier": "Independent"
+      "address": "0xe6299A1f093e82D659e254B5F877b950b260D19C",
+      "expectedTier": "Independent",
+      "note": "Team wallet; first USDC arrived through a bridge (hub). Replaces the generated indie-1."
     },
     {
       "role": "independent",

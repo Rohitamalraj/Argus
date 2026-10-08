@@ -7,7 +7,7 @@ export const NETWORKS: Record<Network, { chainId: number; usdc: Address; hypersy
     chainId: 143,
     usdc: '0x754704Bc059F8C67012fEd69BC8A327a5aafb603',
     hypersync: 'https://monad.hypersync.xyz',
-    registry: process.env.REGISTRY_ADDRESS_MAINNET as Address | undefined,
+    registry: (process.env.REGISTRY_ADDRESS_MAINNET as Address | undefined) ?? '0x151e488618FC0F79F7f91447351174Fb8D98cE98',
   },
   testnet: {
     chainId: 10143,

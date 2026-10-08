@@ -6,6 +6,8 @@ export const KNOWN_HUBS: Record<number, Record<string, string>> = {
   // Monad mainnet
   143: {
     '0x0000000000000000000000000000000000000000': 'USDC mint (CCTP and Circle mints arrive from the zero address)',
+    // Bridge payout address: 2,606 recipients of >= 0.10 USDC when checked on 2026-10-09.
+    '0xfd03abcadaf3f930fa4e37eb2f6ea3a44a41b7f0': 'Bridge payout',
   },
   // Monad testnet
   10143: {

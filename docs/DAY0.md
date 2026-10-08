@@ -24,3 +24,11 @@ Results of the verification checklist in the PRD. Each check has a fallback, so 
 - **One Nansen x402 call on mainnet: pass.** `npm run nansen-x402 -w @argus/analyzer` paid 0.01 USDC on Monad mainnet (`eip155:143`) from the analyzer wallet, tx `0x06f762f1df16191108aaeae21841489a8a30e3aa1dc41f78c7437490104bc302`; HTTP 200 with the First Funder relation. No API key sent.
 - SG-4 (Dynamic typed-data policies): answered from the docs, policies do not cover EVM typed data (see V6).
 - Nansen accepts x402 payment in USDC on Monad mainnet (`eip155:143`), 0.01 USDC per call.
+
+## Mainnet setup (9 Oct)
+
+- Registry on Monad mainnet: `0x151e488618FC0F79F7f91447351174Fb8D98cE98` (source submitted to Sourcify).
+- Mainnet farm funded: F sent an identical 0.20 USDC to 10 wallets within 13 seconds. The light check gives all 10 Linked, high confidence, one operator.
+- Mainnet independent 1 is the team wallet; its first USDC came from a bridge payout address with 2,606 recipients (a hub), so it is Independent.
+- Mainnet independents 2 and 3 get their first USDC by swapping their own MON on Uniswap v3 (WMON/USDC 0.3% pool), so the first USDC sender is a public pool.
+- Finding: Nansen's `related-wallets` "First Funder" for the team wallet differs from the first USDC sender found by HyperSync; it appears to track the first native-token funder. The Nansen provider must take the first USDC funder from `transactions`, or the agreement check would report a false disagreement.
