@@ -27,17 +27,6 @@ export function Logo() {
   );
 }
 
-export function AnnouncementBar() {
-  return (
-    <div className="announce">
-      <Link href="/dashboard#simulate">Live on Monad testnet: run the 13-wallet simulation →</Link>
-      <a href={GITHUB} target="_blank" rel="noreferrer">
-        Built for Monad Metropolis · Track 04 →
-      </a>
-    </div>
-  );
-}
-
 export function Nav({ active }: { active?: 'home' | 'dashboard' }) {
   return (
     <header className="nav">

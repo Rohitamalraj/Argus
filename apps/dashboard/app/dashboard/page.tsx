@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { AnnouncementBar, Footer, Nav } from '@/components/chrome';
+import { Footer, Nav } from '@/components/chrome';
 import { GroupGraph } from '@/components/group-graph';
 import { ANALYZER_URL, explorer, getOverview, short, tierClass, type Network, type Overview, type Verdict } from '@/lib/api';
 
@@ -52,7 +52,6 @@ export default function Dashboard() {
 
   return (
     <>
-      <AnnouncementBar />
       <Nav active="dashboard" />
       <main className="container">
         <div className="dash-head">

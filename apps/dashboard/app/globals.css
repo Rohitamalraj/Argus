@@ -63,22 +63,6 @@ button {
   padding: 0 var(--gutter);
 }
 
-/* ---------- Announcement bar ---------- */
-.announce {
-  background: var(--ink);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 500;
-  display: flex;
-  justify-content: center;
-  gap: 32px;
-  padding: 14px 16px;
-  flex-wrap: wrap;
-}
-.announce a:hover {
-  opacity: 0.8;
-}
-
 /* ---------- Nav ---------- */
 .nav {
   position: sticky;
@@ -643,9 +627,5 @@ h3.title {
   }
   .nav-actions .btn-light {
     display: none;
-  }
-  .announce {
-    gap: 10px;
-    font-size: 12px;
   }
 }

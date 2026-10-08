@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { AnnouncementBar, Footer, GITHUB, Marquee, Nav } from '@/components/chrome';
+import { Footer, GITHUB, Marquee, Nav } from '@/components/chrome';
 import { HeroArt } from '@/components/hero-art';
 import { LiveCount } from '@/components/live-count';
 
@@ -32,7 +32,6 @@ const TIERS = [
 export default function Home() {
   return (
     <>
-      <AnnouncementBar />
       <Nav active="home" />
       <section className="hero">
         <HeroArt />
