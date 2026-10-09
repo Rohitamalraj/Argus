@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Footer, Nav } from '@/components/chrome';
 import { getAgentReputation, short, type AgentReputation, type Network } from '@/lib/api';
+import { ENVIO_GRAPHQL_URL } from '@/components/envio-panel';
 
 /** Agents worth a look on Monad mainnet, from the ERC-8004 Reputation registry (checked 9 Oct 2026). */
 const EXAMPLES: { id: string; note: string }[] = [
@@ -19,6 +20,25 @@ export default function Agents() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [r, setR] = useState<AgentReputation | null>(null);
+  const [top, setTop] = useState<{ id: string; note: string }[] | null>(null);
+
+  // Most-reviewed agents, straight from the Envio HyperIndex GraphQL API.
+  useEffect(() => {
+    setTop(null);
+    if (!ENVIO_GRAPHQL_URL) return;
+    const chainId = network === 'mainnet' ? 143 : 10143;
+    fetch(ENVIO_GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query: `query($c:Int!){ Agent(where:{chainId:{_eq:$c}}, order_by:{distinctClients:desc}, limit:4){ agentId distinctClients feedbackCount } }`, variables: { c: chainId } }),
+    })
+      .then((x) => x.json())
+      .then((j: { data?: { Agent?: { agentId: string; distinctClients: number }[] } }) => {
+        const rows = j.data?.Agent ?? [];
+        setTop(rows.length ? rows.map((a) => ({ id: a.agentId, note: `${a.distinctClients.toLocaleString('en-US')} reviewer${a.distinctClients === 1 ? '' : 's'}` })) : null);
+      })
+      .catch(() => setTop(null));
+  }, [network]);
 
   async function analyze(id = agentId, net: Network = network) {
     if (!/^\d+$/.test(id)) return setError('Enter the agent id, a number.');
@@ -92,8 +112,8 @@ export default function Agents() {
             <button type="submit" className="btn btn-dark" disabled={busy}>
               {busy ? 'Tracing reviewers…' : 'Analyze'} <span className="chev">›</span>
             </button>
-            <span className="mono small muted">try</span>
-            {EXAMPLES.map((x) => (
+            <span className="mono small muted">{top ? 'most reviewed (Envio)' : 'try'}</span>
+            {(top ?? (network === 'mainnet' ? EXAMPLES : [])).map((x) => (
               <button key={x.id} type="button" className="btn btn-light" onClick={() => (setAgentId(x.id), void analyze(x.id))} disabled={busy}>
                 #{x.id} <span className="muted">{x.note}</span>
               </button>
