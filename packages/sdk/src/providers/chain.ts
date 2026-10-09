@@ -11,8 +11,14 @@ import { HyperSyncClient } from './hypersync.ts';
 
 /** Addresses per topic filter in one query. */
 const CHUNK = 500;
-/** Enough to prove a funder is a hub without downloading all of its history. */
-const FUNDER_PAGE_CAP = 20_000;
+/**
+ * Transfers read per funder to decide whether it is a hub. More than 200 distinct recipients is proof, so there
+ * is no need to page a whole history: on the free HyperSync tier (about 15 queries a minute) an exchange's
+ * outbound history would otherwise take many minutes.
+ */
+const HUB_PROBE = 2_500;
+/** Ceiling when the small funders are re-read in full. */
+const FUNDER_FULL_CAP = 20_000;
 
 const chunks = <T>(xs: T[], n: number) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
 const key = (t: Transfer) => `${t.txHash}:${t.from}:${t.to}:${t.amount}`.toLowerCase();
@@ -53,12 +59,13 @@ export class ChainDataProvider {
     }
 
     // 2. Everything the funders sent: recipient counts (hub rule) and candidate members.
-    let fOut = await this.many((part) => this.hs.transfers({ from: part, maxTransfers: FUNDER_PAGE_CAP }), [...funders]);
+    const probeCap = HUB_PROBE * Math.min(Math.max(funders.size, 1), 8);
+    let fOut = await this.many((part) => this.hs.transfers({ from: part, maxTransfers: probeCap }), [...funders]);
     const hubs = new Set([...funders].filter((f) => countHubRecipients(fOut, f, this.cfg.hubMinTransfer) > this.cfg.hubRecipientThreshold));
     const bespoke = [...funders].filter((f) => !hubs.has(f));
-    if (fOut.length >= FUNDER_PAGE_CAP && hubs.size > 0 && bespoke.length > 0) {
-      // A hub filled the page cap; fetch the small funders again on their own so none of their history is cut off.
-      const rest = await this.many((part) => this.hs.transfers({ from: part }), bespoke);
+    if (fOut.length >= probeCap && bespoke.length > 0) {
+      // The probe was cut off, so the small funders' histories may be incomplete: read them again on their own.
+      const rest = await this.many((part) => this.hs.transfers({ from: part, maxTransfers: FUNDER_FULL_CAP }), bespoke);
       fOut = [...fOut.filter((t) => hubs.has(lc(t.from))), ...rest];
     }
 
