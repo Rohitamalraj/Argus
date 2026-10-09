@@ -14,6 +14,19 @@ export interface ArgusPolicy {
   optimisticFirstCall: boolean;
 }
 
+/** Promo counters. Synchronous on purpose: the quote path reads them on every request. */
+export interface PromoStore {
+  used(key: string): number;
+  consume(key: string): void;
+}
+
+/**
+ * Works out a wallet's verdict yourself, with no Argus server: for example the SDK's `localResolver`, which recomputes
+ * it from public chain data. It may take seconds; the middleware never waits for it (the first call is optimistic) and
+ * uses the answer once it arrives.
+ */
+export type VerdictResolver = (wallet: Address) => Promise<Omit<VerdictView, 'source'> | undefined>;
+
 export interface ArgusOptions {
   network: ArgusNetwork;
   /** Seller wallet that receives payments. */
@@ -29,6 +42,10 @@ export interface ArgusOptions {
   registry?: Address;
   rpcUrl?: string;
   analyzerUrl?: string;
+  /** Verdicts computed locally (see VerdictResolver). Tried after the registry and the analyzer. */
+  resolver?: VerdictResolver;
+  /** Where promo counters live. Default: in memory, which a restart resets. Use FilePromoStore to keep them. */
+  store?: PromoStore;
   facilitatorUrl?: string;
   /** Name the analyzer sees in payment reports. */
   seller?: string;
@@ -47,7 +64,7 @@ export interface VerdictView {
   confidence?: string;
   reasons?: string[];
   expiresAt: number;
-  source: 'cache' | 'registry' | 'analyzer';
+  source: 'cache' | 'registry' | 'analyzer' | 'local';
 }
 
 /** MW-6: what the route handler sees on req.argus. */

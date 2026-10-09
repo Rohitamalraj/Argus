@@ -17,6 +17,9 @@ const v = await argus.checkWallet('0x971E94Fed75A8f527566206E68D85e52F050C6D1');
 v.tierName; // 'Linked'
 v.reasons;  // ['First USDC funder also seeded 9 other wallets', ...]
 
+// 1b. Many wallets at once: a handful of chain queries however many there are
+await argus.checkWallets([walletA, walletB, walletC]);
+
 // 2. Does a published on-chain verdict agree with the chain?
 const check = await argus.verify('0x971E94Fed75A8f527566206E68D85e52F050C6D1');
 check.matches; // true
@@ -27,6 +30,17 @@ rep.raw.distinctClients;   // 7665 reviewers
 rep.independent.operators; // 1
 rep.clientAllowlist;       // one reviewer per operator: pass to getSummary(agentId, clientAddresses, '', '')
 ```
+
+## Verify payers in your x402 seller, with no Argus server
+
+```ts
+import { createArgus, localResolver } from 'argus-x402-sdk';
+import { argus } from 'argus-x402-middleware';
+
+app.use(argus({ /* ... */ resolver: localResolver(createArgus({ network: 'mainnet', hypersyncToken })) }));
+```
+
+`localResolver` batches wallets that arrive together into a few HyperSync queries and never makes a request wait.
 
 ## Command line
 

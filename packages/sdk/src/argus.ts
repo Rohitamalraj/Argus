@@ -35,6 +35,8 @@ export interface Argus {
   readonly network: NetworkInfo;
   /** The verdict for a wallet, recomputed locally from public chain data. Nothing is sent to an Argus server. */
   checkWallet(wallet: Address): Promise<Decision>;
+  /** Several wallets in one go: a handful of chain queries however many wallets there are. */
+  checkWallets(wallets: Address[]): Promise<Decision[]>;
   /** The verdict an attestor published on-chain. */
   verdictOf(wallet: Address, attestor?: Address): Promise<OnchainVerdict>;
   /** Recompute locally and compare with the published verdict: verify, don't trust. */
@@ -53,15 +55,19 @@ export function createArgus(o: ArgusOptions): Argus {
   const registry = new RegistryReader(o.network, { rpcUrl: o.rpcUrl, registry: o.registry });
   const usdcConfig = (): ScoringConfig => makeConfig({ knownHubs: [...knownHubsFor(net.chainId), ...(o.knownHubs ?? [])] });
 
-  const checkWallet = async (wallet: Address): Promise<Decision> => {
+  const checkWallets = async (wallets: Address[]): Promise<Decision[]> => {
+    if (wallets.length === 0) return [];
     const cfg = usdcConfig();
     const provider = new ChainDataProvider(hyper(), net.chainId, cfg);
-    return decide(await provider.gather(wallet), ZERO_SALT, cfg);
+    const { inputs } = await provider.gatherMany(wallets);
+    return inputs.map((input) => decide(input, ZERO_SALT, cfg));
   };
+  const checkWallet = async (wallet: Address): Promise<Decision> => (await checkWallets([wallet]))[0]!;
 
   return {
     network: net,
     checkWallet,
+    checkWallets,
     verdictOf: (wallet, attestor) => registry.verdictOf(wallet, attestor),
     async verify(wallet, attestor = net.defaultAttestor) {
       const [onchain, local] = await Promise.all([registry.verdictOf(wallet, attestor), checkWallet(wallet)]);

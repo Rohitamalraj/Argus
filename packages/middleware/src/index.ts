@@ -4,12 +4,13 @@ import { HTTPFacilitatorClient } from '@x402/core/server';
 import { ExactEvmScheme } from '@x402/evm/exact/server';
 import { paymentMiddleware, x402ResourceServer } from '@x402/express';
 import { claimedPayer, decodePayment, fromPayload } from './payer.ts';
-import { DEFAULT_POLICY, MemoryPromoStore, quote, type PromoStore, type Quote } from './policy.ts';
-import type { Address, ArgusInfo, ArgusNetwork, ArgusOptions } from './types.ts';
+import { DEFAULT_POLICY, MemoryPromoStore, quote, type Quote } from './policy.ts';
+import type { Address, ArgusInfo, ArgusNetwork, ArgusOptions, PromoStore } from './types.ts';
 import { VerdictSource } from './verdicts.ts';
 
 export * from './types.ts';
-export { quote, MemoryPromoStore, DEFAULT_POLICY, type PromoStore, type Quote } from './policy.ts';
+export { quote, MemoryPromoStore, DEFAULT_POLICY, type Quote } from './policy.ts';
+export { FilePromoStore } from './file-store.ts';
 export { VerdictSource } from './verdicts.ts';
 export { claimedPayer, signedPayer, decodePayment } from './payer.ts';
 
@@ -39,7 +40,7 @@ export interface ArgusDeps {
 export function argus(o: ArgusOptions, deps: ArgusDeps = {}): RequestHandler {
   const net = ARGUS_NETWORKS[o.network];
   const policy = { ...DEFAULT_POLICY, ...o.policy };
-  const store = deps.store ?? new MemoryPromoStore();
+  const store = deps.store ?? o.store ?? new MemoryPromoStore();
   const doFetch = deps.fetch ?? fetch;
   const log = o.log ?? (() => {});
   const verdicts =
@@ -50,6 +51,7 @@ export function argus(o: ArgusOptions, deps: ArgusDeps = {}): RequestHandler {
       attestors: o.attestors ?? [],
       rpcUrl: o.rpcUrl,
       analyzerUrl: o.analyzerUrl,
+      ...(o.resolver ? { resolver: o.resolver } : {}),
       lookupTimeoutMs: o.lookupTimeoutMs ?? 300,
     });
   const units = { standard: usdToUnits(o.price.standard), promo: usdToUnits(o.price.promo) };

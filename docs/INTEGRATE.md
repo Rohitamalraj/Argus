@@ -35,7 +35,9 @@ How it behaves:
 - If the registry or analyzer is down, everyone pays the standard price. It never blocks a paying request.
 - `req.argus` exposes `tierName`, `reasons`, `price` and `promoLeft` to your handler.
 
-A working seller is in [`apps/seller-demo`](../apps/seller-demo); `npm run pay -w @argus/farm-sim` sends real x402 payments to it.
+**No Argus server needed.** Pass `resolver: localResolver(createArgus({ network, hypersyncToken }))` (from `argus-x402-sdk`) and the seller verifies its own payers from public chain data; only your HyperSync provider sees the queries. Add `store: new FilePromoStore('./data/promos.json')` so a restart does not hand out the promos again. Details: [packages/middleware](../packages/middleware).
+
+A working seller is in [`apps/seller-demo`](../apps/seller-demo) (`ARGUS_LOCAL=true` runs it with no Argus server); `npm run pay -w @argus/farm-sim` sends real x402 payments to it.
 
 ## 2. Developer: verify a verdict, or de-duplicate reputation
 

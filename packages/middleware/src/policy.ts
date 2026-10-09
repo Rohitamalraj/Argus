@@ -1,4 +1,6 @@
-import type { Address, ArgusPolicy, VerdictView } from './types.ts';
+import type { Address, ArgusPolicy, PromoStore, VerdictView } from './types.ts';
+
+export type { PromoStore } from './types.ts';
 
 export const DEFAULT_POLICY: ArgusPolicy = {
   promoCalls: 20,
@@ -7,12 +9,7 @@ export const DEFAULT_POLICY: ArgusPolicy = {
   optimisticFirstCall: true,
 };
 
-/** Promo counters. In memory by default; one instance per seller. */
-export interface PromoStore {
-  used(key: string): number;
-  consume(key: string): void;
-}
-
+/** Promo counters in memory: fast, and reset by a restart. One instance per seller. */
 export class MemoryPromoStore implements PromoStore {
   private m = new Map<string, number>();
   used(key: string) {

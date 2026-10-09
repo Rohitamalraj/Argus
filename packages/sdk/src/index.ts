@@ -5,3 +5,4 @@ export * from './reputation.ts';
 export * from './argus.ts';
 export { HyperSyncClient, type ChainReader, type ChainLog, type TransferQuery } from './providers/hypersync.ts';
 export { ChainDataProvider } from './providers/chain.ts';
+export { localResolver, type LocalVerdict, type LocalResolverOptions } from './local-resolver.ts';

@@ -1,6 +1,6 @@
 import { createPublicClient, http, parseAbi, type PublicClient } from 'viem';
 import { monad, monadTestnet } from 'viem/chains';
-import type { Address, ArgusNetwork, Hex, TierName, VerdictView } from './types.ts';
+import type { Address, ArgusNetwork, Hex, TierName, VerdictResolver, VerdictView } from './types.ts';
 
 const TIER_NAMES: TierName[] = ['Unclear', 'Linked', 'Independent', 'Verified'];
 const abi = parseAbi([
@@ -14,9 +14,14 @@ export interface VerdictSourceOptions {
   attestors: Address[];
   rpcUrl?: string;
   analyzerUrl?: string;
+  /** Verdicts computed locally; may be slow. Runs in the background and never blocks a lookup. */
+  resolver?: VerdictResolver;
   lookupTimeoutMs: number;
   now?: () => number;
 }
+
+/** How long a locally computed verdict is reused before it is recomputed. */
+const RESOLVED_TTL_MS = 10 * 60_000;
 
 /**
  * MW-2: local cache, then the registry for trusted attestors in priority order, then the analyzer
@@ -25,6 +30,7 @@ export interface VerdictSourceOptions {
  */
 export class VerdictSource {
   private cache = new Map<string, { v?: VerdictView; until: number }>();
+  private inflight = new Map<string, Promise<VerdictView | undefined>>();
   private client?: PublicClient;
   private now: () => number;
 
@@ -42,10 +48,35 @@ export class VerdictSource {
     if (hit && hit.until > Date.now() && (!hit.v || hit.v.expiresAt > this.now())) {
       return hit.v && { ...hit.v, source: 'cache' };
     }
-    const v = (await this.fromRegistry(wallet)) ?? (await this.fromAnalyzer(wallet));
+    const v = (await this.fromRegistry(wallet)) ?? (await this.fromAnalyzer(wallet)) ?? (await this.fromResolver(wallet));
     // Found verdicts are cached for a minute, misses for a few seconds so a new verdict is picked up quickly.
-    this.cache.set(key, { v, until: Date.now() + (v ? 60_000 : 1_000) });
+    // A local resolver may still be working, and caches its own answer when it finishes: do not overwrite that.
+    if (v || !this.cache.get(key)?.v) this.cache.set(key, { v, until: Date.now() + (v ? (v.source === 'local' ? RESOLVED_TTL_MS : 60_000) : 1_000) });
     return v;
+  }
+
+  /**
+   * Run the local resolver once per wallet at a time. If it answers within the lookup limit the verdict is used now;
+   * if not, the lookup reads as none (the first call is optimistic) and the answer is cached for the next request.
+   */
+  private fromResolver(wallet: Address): Promise<VerdictView | undefined> {
+    if (!this.o.resolver) return Promise.resolve(undefined);
+    const key = wallet.toLowerCase();
+    let run = this.inflight.get(key);
+    if (!run) {
+      run = this.o
+        .resolver(wallet)
+        .then((v): VerdictView | undefined => {
+          if (!v) return undefined;
+          const view: VerdictView = { ...v, source: 'local' };
+          this.cache.set(key, { v: view, until: Date.now() + RESOLVED_TTL_MS });
+          return view;
+        })
+        .catch(() => undefined)
+        .finally(() => this.inflight.delete(key));
+      this.inflight.set(key, run);
+    }
+    return Promise.race([run, new Promise<undefined>((r) => setTimeout(() => r(undefined), this.o.lookupTimeoutMs).unref())]);
   }
 
   /** Forget a wallet, e.g. after the analyzer reports a new verdict. */
