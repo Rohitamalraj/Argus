@@ -47,6 +47,11 @@ rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 const rootPkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
 const tgz = [];
+/** Workspace name -> version, so a package depends on the real version of each internal dependency. */
+const versions = Object.fromEntries(PACKAGES.map((p) => {
+  const j = JSON.parse(readFileSync(join(root, p.dir, 'package.json'), 'utf8'));
+  return [j.name, j.version];
+}));
 
 for (const p of PACKAGES) {
   const src = join(root, p.dir);
@@ -62,15 +67,16 @@ for (const p of PACKAGES) {
   for (const entry of Object.values(p.bin)) {
     run('npx', ['tsup', entry, '--format', 'esm', '--target', 'node20', '--out-dir', join(stage, 'dist')], src);
     const file = join(stage, 'dist', entry.split('/').pop().replace(/\.ts$/, '.js'));
-    const body = readFileSync(file, 'utf8');
-    if (!body.startsWith('#!')) writeFileSync(file, `#!/usr/bin/env node\n${body}`);
+    // the source file carries a dev shebang (tsx); the published file must run on plain node
+    const body = readFileSync(file, 'utf8').replace(/^#!.*\r?\n/, '');
+    writeFileSync(file, `#!/usr/bin/env node\n${body}`);
   }
   rewrite(join(stage, 'dist'));
 
   const main = './dist/' + p.lib[0].split('/').pop().replace(/\.ts$/, '.js');
   const types = main.replace(/\.js$/, '.d.ts');
   const deps = Object.fromEntries(
-    Object.entries(pkg.dependencies ?? {}).map(([d, v]) => (NAMES[d] ? [NAMES[d], `^${pkg.version}`] : [d, v])),
+    Object.entries(pkg.dependencies ?? {}).map(([d, v]) => (NAMES[d] ? [NAMES[d], `^${versions[d]}`] : [d, v])),
   );
   const published = {
     name,
@@ -82,7 +88,7 @@ for (const p of PACKAGES) {
     main,
     types,
     exports: { '.': { types, import: main } },
-    ...(Object.keys(p.bin).length ? { bin: Object.fromEntries(Object.entries(p.bin).map(([b, e]) => [b, './dist/' + e.split('/').pop().replace(/\.ts$/, '.js')])) } : {}),
+    ...(Object.keys(p.bin).length ? { bin: Object.fromEntries(Object.entries(p.bin).map(([b, e]) => [b, 'dist/' + e.split('/').pop().replace(/\.ts$/, '.js')])) } : {}),
     files: ['dist', 'README.md', 'LICENSE'],
     dependencies: Object.fromEntries(Object.entries(deps).sort()),
     ...(pkg.peerDependencies ? { peerDependencies: pkg.peerDependencies } : {}),

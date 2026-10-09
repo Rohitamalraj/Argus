@@ -1,6 +1,6 @@
 {
   "name": "@argus/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Argus SDK: recompute operator-independence verdicts locally from public chain data, verify on-chain attestations, and dedupe ERC-8004 reputation by operator.",
   "license": "MIT",
   "type": "module",
