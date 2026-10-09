@@ -1,0 +1,21 @@
+# Render Blueprint: the Argus analyzer and demo seller as one Docker web service.
+# Dashboard: deploy apps/dashboard on Vercel (see docs/DEPLOY.md).
+services:
+  - type: web
+    name: argus-analyzer
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIO_API_TOKEN
+        sync: false
+      - key: NANSEN_API_KEY
+        sync: false
+      - key: WALLETS_TESTNET_B64
+        sync: false
+      - key: ATTESTOR_SALT
+        sync: false
+      - key: PUBLISH_MAINNET
+        value: "false"
+      - key: NANSEN_DAILY_CAP_USD
+        value: "0.3"

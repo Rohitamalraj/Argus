@@ -1,0 +1,44 @@
+// One process for a small host: the Argus analyzer (public API, on $PORT) and the demo x402 seller
+// (internal, :4021) that the judge simulation pays. Used by the Dockerfile.
+//
+// Testnet demo wallets arrive as one secret: WALLETS_TESTNET_B64 = base64 of wallets.testnet.json
+// (testnet keys only; the file is never committed).
+import { spawn } from 'node:child_process';
+import { existsSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const port = process.env.PORT ?? '8787';
+const sellerPort = '4021';
+
+const walletsFile = join(root, 'wallets.testnet.json');
+if (!existsSync(walletsFile) && process.env.WALLETS_TESTNET_B64) {
+  writeFileSync(walletsFile, Buffer.from(process.env.WALLETS_TESTNET_B64, 'base64'));
+  console.log('[hosted] wrote wallets.testnet.json from WALLETS_TESTNET_B64');
+}
+if (!existsSync(walletsFile)) console.log('[hosted] no testnet wallets: the judge simulation and verdict publishing will be off');
+
+const children = [];
+const start = (name, args, env) => {
+  const c = spawn(process.execPath, ['--import', 'tsx', ...args], { cwd: root, env: { ...process.env, ...env }, stdio: ['ignore', 'pipe', 'pipe'] });
+  const tag = (d) => d.toString().split('\n').filter(Boolean).forEach((l) => console.log(`[${name}] ${l}`));
+  c.stdout.on('data', tag);
+  c.stderr.on('data', tag);
+  c.on('exit', (code) => {
+    console.error(`[hosted] ${name} exited with ${code}; stopping`);
+    for (const o of children) o.kill();
+    process.exit(code ?? 1);
+  });
+  children.push(c);
+};
+
+start('seller', ['apps/seller-demo/src/server.ts'], {
+  NETWORK: 'testnet',
+  PORT: sellerPort,
+  SELLER_NAME: 'seller-a',
+  ANALYZER_URL: `http://localhost:${port}`,
+});
+start('analyzer', ['services/analyzer/src/server.ts'], { PORT: port, SIM_SELLER_URL: `http://localhost:${sellerPort}` });
+
+for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => children.forEach((c) => c.kill()));

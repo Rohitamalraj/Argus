@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+.git
+.env
+.env.*
+wallets*.json
+data
+release
+.shots
+apps/dashboard
+indexer
+contracts/lib
+contracts/out
+contracts/cache
+contracts/broadcast
+docs
+**/*.local.ts

@@ -21,3 +21,4 @@ next-env.d.ts
 *.tsbuildinfo
 .shots/
 release/
+wallets.testnet.json.bak
