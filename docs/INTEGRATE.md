@@ -2,7 +2,7 @@
 
 Five ways in, from smallest to most involved. Everything reads public Monad chain data. You need a free Envio HyperSync token for anything that reads funding history: https://envio.dev/app/api-tokens
 
-> The packages build and install from a clean folder today (`npm run release:build`). Until they are on npm, install the tarballs from `release/`, or run from this repo with `npm run argus -w @argus/sdk -- ...`.
+> All four packages are on npm (`argus-x402-sdk`, `argus-x402-mcp`, `argus-x402-middleware`, `argus-x402-scoring`). The command line tool is `argus-x402`, inside `argus-x402-sdk`: run it with `npx -p argus-x402-sdk argus-x402 <command>`.
 
 ## 1. x402 seller: one promo per operator
 
@@ -53,7 +53,7 @@ await argus.verify(wallet);        // does the published on-chain verdict match?
 await argus.verdictOf(wallet);     // just read the on-chain verdict (no token needed)
 ```
 
-The same from a terminal: `argus-x402 check <wallet>`, `argus-x402 verify <wallet>`, `argus-x402 reputation <agentId>`.
+The same from a terminal: `npx -p argus-x402-sdk argus-x402 check <wallet>`, `... verify <wallet>`, `... reputation <agentId>` (after `npm install argus-x402-sdk` the command is simply `argus-x402`).
 
 ## 3. ERC-8004: reputation counted by operator
 

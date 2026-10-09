@@ -8,7 +8,7 @@ Verdicts use only public chain data, are deterministic, and can be recomputed by
 
 Wallets are free. One operator can run a hundred of them, and anything that counts wallets (a per-wallet promo, a feedback score, a campaign) counts the operator a hundred times. ERC-8004 says as much: unfiltered feedback is open to Sybil attacks, and it expects third parties to supply the reviewer filter.
 
-On Monad mainnet today, ERC-8004 agent #182 has **7,665 feedback entries from 7,665 wallets. One funder first funded every one of them**, and 5,555 received an identical 11 MON within 24 hours. That is one operator. Reproduce it with `npm run argus -w @argus/sdk -- reputation 182`; see [docs/ERC8004.md](docs/ERC8004.md).
+On Monad mainnet today, ERC-8004 agent #182 has **7,665 feedback entries from 7,665 wallets. One funder first funded every one of them**, and 5,555 received an identical 11 MON within 24 hours. That is one operator. Reproduce it with `npx -p argus-x402-sdk argus-x402 reputation 182` (or `npm run argus -w @argus/sdk -- reputation 182` from this repo); see [docs/ERC8004.md](docs/ERC8004.md).
 
 ## Four ways to use it
 
@@ -32,11 +32,11 @@ rep.independent.operators; // 1
 ```
 
 ```bash
-# agent: add the tools to Claude Code (from this repo; see packages/mcp for the npm form)
-claude mcp add argus -e ENVIO_API_TOKEN=<token> -- node --import tsx packages/mcp/src/main.ts
+# agent: add the tools to Claude Code
+claude mcp add argus -e ENVIO_API_TOKEN=<token> -- npx -y argus-x402-mcp
 ```
 
-> **Package status.** The four packages build to plain JavaScript with type declarations (`npm run release:build`) and have been installed and run from a clean folder. Publishing them to npm is the one step left; until then, install from this repo. Step-by-step guides: [docs/INTEGRATE.md](docs/INTEGRATE.md). A free HyperSync token comes from https://envio.dev/app/api-tokens.
+> **On npm:** [`argus-x402-sdk`](https://www.npmjs.com/package/argus-x402-sdk), [`argus-x402-mcp`](https://www.npmjs.com/package/argus-x402-mcp), [`argus-x402-middleware`](https://www.npmjs.com/package/argus-x402-middleware), [`argus-x402-scoring`](https://www.npmjs.com/package/argus-x402-scoring). Installed from the registry in a clean folder and run against live Monad. Step-by-step guides: [docs/INTEGRATE.md](docs/INTEGRATE.md). A free HyperSync token comes from https://envio.dev/app/api-tokens.
 
 ## How trust works
 

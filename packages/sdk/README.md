@@ -31,10 +31,10 @@ rep.clientAllowlist;       // one reviewer per operator: pass to getSummary(agen
 ## Command line
 
 ```bash
-npx argus-x402 reputation 182          # ERC-8004 reputation, deduplicated by operator
-npx argus-x402 reputation 182 --sample 800
-npx argus-x402 check 0x...             # operator-independence verdict
-npx argus-x402 verify 0x...            # published verdict vs local recomputation
+npx -p argus-x402-sdk argus-x402 reputation 182          # ERC-8004 reputation, deduplicated by operator
+npx -p argus-x402-sdk argus-x402 reputation 182 --sample 800
+npx -p argus-x402-sdk argus-x402 check 0x...             # operator-independence verdict
+npx -p argus-x402-sdk argus-x402 verify 0x...            # published verdict vs local recomputation
 ```
 
 ## What it reads
