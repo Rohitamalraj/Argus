@@ -37,3 +37,9 @@ Results of the verification checklist in the PRD. Each check has a fallback, so 
 
 - **Judge simulation runs end to end on testnet: pass.** `POST /v1/sim/run` sent 39 real x402 payments (13 wallets x 3 calls) through the seller, the Argus middleware and the Monad facilitator in 54 s, in a fresh promo namespace. The farm of 10 received exactly 20 promo calls in total (one shared allowance); each independent received its own promo.
 - **Dashboard shows 13 wallets as 4 customers: pass.** `GET /v1/overview?network=testnet` returns 13 paying wallets, 4 customers (1 operator of 10, 3 independents); verdicts published to the testnet registry.
+
+## Envio (9 Oct)
+
+- Indexer deployed on Envio Cloud (`rohitamalraj/argus`, root `indexer`, branch `main`, HyperIndex 3.14.0): both chains (143, 10143) synced 100% in under a minute.
+- Live GraphQL (testnet): 75 payments from 13 distinct payers to the demo seller, 4 on-chain operators (1 Linked with 10 wallets, 3 Independent).
+- The dashboard's "On-chain activity" panel reads these numbers from the Envio GraphQL API (DB-5).
