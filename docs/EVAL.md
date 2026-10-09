@@ -16,7 +16,7 @@ How well does the rule separate operators from independent customers? All number
 | Dust-sprayed funder: 300 recipients of 0.001 USDC to look like a hub | 10 farm + 300 | **farm still Linked**; dust does not count toward the hub rule | `packages/scoring` tests |
 | Two wallets sharing a funder; one shared funder with nothing else | 2; 3 | **Independent** (below the group minimum); **Unclear** (S1 alone never links) | `packages/scoring` tests |
 | Same answer for every seller: a second seller instance reads the first one's verdicts | 3 wallets | **identical tiers, no analyzer call** | end-to-end run on testnet |
-| Negative control: recently active mainnet accounts with no tie to us | NEGCTL_SIZE | NEGCTL_RESULT | see below |
+| Negative control: recently active mainnet accounts with no tie to us (precision check) | 12 wallets, spread evenly over the 106 externally owned accounts that sent USDC on mainnet in the previous ~28 hours (the plan was 20; each lookup is slow on the free tier) | **12 of 12 Independent, 0 Linked.** 146 HyperSync queries, about 10 minutes | the script is not in the repo; the sample is recent senders from `HyperSyncClient.transfers`, filtered to accounts with no contract code |
 
 ### ERC-8004 (Monad mainnet)
 
