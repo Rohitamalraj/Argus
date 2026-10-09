@@ -1,6 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { isAddress } from 'viem';
 import type { Address } from '@argus/scoring';
+import type { AgentReputationService } from './agents.ts';
 import type { Assessor } from './assessor.ts';
 import type { Network } from './networks.ts';
 import type { SimRunner } from './sim.ts';
@@ -10,6 +11,7 @@ export interface ApiDeps {
   store: Store;
   assessor: Assessor;
   sim?: SimRunner;
+  agents?: AgentReputationService;
   now?: () => number;
 }
 
@@ -34,7 +36,7 @@ const wrap =
   (fn: (req: Request, res: Response) => Promise<unknown>) => (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
 
-export function createApi({ store, assessor, sim, now = () => Math.floor(Date.now() / 1000) }: ApiDeps) {
+export function createApi({ store, assessor, sim, agents, now = () => Math.floor(Date.now() / 1000) }: ApiDeps) {
   const app = express();
   app.use(express.json({ limit: '100kb' }));
   app.use((_req, res, next) => {
@@ -119,6 +121,24 @@ export function createApi({ store, assessor, sim, now = () => Math.floor(Date.no
         wallets,
         costs: store.costs().filter((c) => c.network === net),
       });
+    }),
+  );
+
+  /**
+   * ERC-8004 reputation for an agent, deduplicated by operator. Large agents are traced from a sample
+   * (default 800 reviewers); results are cached for an hour.
+   */
+  app.get(
+    '/v1/agent/:id/reputation',
+    wrap(async (req, res) => {
+      if (!agents) throw new HttpError(503, 'agent reputation is not set up on this server');
+      const agentId = req.params.id ?? '';
+      if (!/^[0-9]{1,30}$/.test(agentId)) throw new HttpError(400, 'agent id must be a number');
+      const net = network(req.query.network ?? 'mainnet');
+      const sample = Math.min(5000, Math.max(50, Number(req.query.sample ?? 800) || 800));
+      const { reputation, cached } = await agents.get(net, agentId, sample);
+      const { operators, clientAllowlist, ...rest } = reputation;
+      res.json({ ...rest, cached, topOperators: operators.slice(0, 20), clientAllowlistSize: clientAllowlist.length, clientAllowlist: clientAllowlist.slice(0, 200) });
     }),
   );
 

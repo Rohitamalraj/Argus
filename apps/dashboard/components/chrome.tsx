@@ -27,7 +27,7 @@ export function Logo() {
   );
 }
 
-export function Nav({ active }: { active?: 'home' | 'dashboard' }) {
+export function Nav({ active }: { active?: 'home' | 'dashboard' | 'agents' }) {
   return (
     <header className="nav">
       <div className="container">
@@ -36,6 +36,9 @@ export function Nav({ active }: { active?: 'home' | 'dashboard' }) {
           <Link href="/#how">How it works</Link>
           <Link href="/#tiers">Tiers</Link>
           <Link href="/#developers">Developers</Link>
+          <Link href="/agents" className={active === 'agents' ? 'active' : undefined}>
+            Agents
+          </Link>
           <Link href="/dashboard" className={active === 'dashboard' ? 'active' : undefined}>
             Dashboard
           </Link>

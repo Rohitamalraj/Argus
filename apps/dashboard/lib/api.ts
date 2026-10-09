@@ -35,3 +35,24 @@ export async function getOverview(network: Network): Promise<Overview> {
 export const explorer = (network: Network) => (network === 'mainnet' ? 'https://monadvision.com' : 'https://testnet.monadvision.com');
 export const short = (a: string, n = 4) => `${a.slice(0, 2 + n)}…${a.slice(-n)}`;
 export const tierClass = (t: string) => t.toLowerCase();
+
+export interface AgentReputation {
+  agentId: string;
+  network: Network;
+  cached?: boolean;
+  raw: { feedbackCount: number; distinctClients: number; meanValue: number | null; implausibleValues: number };
+  independent: { operators: number; linkedOperators: number; meanValue: number | null };
+  sampled?: { analyzed: number; total: number };
+  largestOperatorShare: number;
+  unattributed: number;
+  topOperators: { id: string; kind: 'linked' | 'independent' | 'unattributed'; funder: string | null; clients: number; feedbackCount: number; meanValue: number | null; confidence: string; reasons: string[] }[];
+  clientAllowlistSize: number;
+  hypersyncQueries: number;
+}
+
+export async function getAgentReputation(agentId: string, network: Network, sample = 800): Promise<AgentReputation> {
+  const r = await fetch(`${ANALYZER_URL}/v1/agent/${agentId}/reputation?network=${network}&sample=${sample}`, { cache: 'no-store' });
+  const body = (await r.json().catch(() => ({}))) as AgentReputation & { error?: string };
+  if (!r.ok) throw new Error(body.error ?? `analyzer ${r.status}`);
+  return body;
+}

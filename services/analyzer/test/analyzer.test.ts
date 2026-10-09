@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { assembleInput, makeConfig, type Address, type Transfer } from '@argus/scoring';
 import { CHAIN, EXCHANGE, FAUCET, SALT, SELLER, T0, farm, independents } from '../../../packages/scoring/test/fixtures.ts';
 import { createApi } from '../src/api.ts';
+import { AgentReputationService } from '../src/agents.ts';
 import { Assessor, type WalletIntel } from '../src/assessor.ts';
 import { Publisher } from '../src/publisher.ts';
 import type { Signer } from '../src/signer.ts';
@@ -162,5 +163,57 @@ describe('overview (DB-1)', () => {
     const r = await request(app).get('/v1/overview?network=testnet');
     expect(r.body.counts).toEqual({ rawWallets: 13, customers: 4, operators: 1, linked: 10, independent: 3, unclear: 0 });
     expect(r.body.operators).toHaveLength(4);
+  });
+});
+
+describe('agent reputation endpoint', () => {
+  const rep = (id: string) =>
+    ({
+      agentId: id,
+      network: 'mainnet',
+      raw: { feedbackCount: 7665, distinctClients: 7665, meanValue: 100, implausibleValues: 0 },
+      independent: { operators: 1, linkedOperators: 1, meanValue: 100 },
+      largestOperatorShare: 1,
+      operators: Array.from({ length: 30 }, (_, i) => ({ id: `wallet:${i}`, kind: 'independent', funder: null, clients: 1, feedbackCount: 1, meanValue: 1, confidence: 'low', reasons: [] })),
+      clientAllowlist: Array.from({ length: 300 }, (_, i) => `0x${i.toString(16).padStart(40, '0')}`),
+      unattributed: 0,
+      hypersyncQueries: 3,
+    }) as never;
+
+  const build = () => {
+    const { store, assessor } = setup();
+    let runs = 0;
+    const agents = new AgentReputationService(async (_net, id) => {
+      runs++;
+      await new Promise((r) => setTimeout(r, 30));
+      return rep(id);
+    });
+    return { app: createApi({ store, assessor, agents }), runs: () => runs };
+  };
+
+  it('returns the deduplicated reputation, trimmed for the wire, and caches it', async () => {
+    const { app, runs } = build();
+    const [a, b] = await Promise.all([request(app).get('/v1/agent/182/reputation'), request(app).get('/v1/agent/182/reputation')]);
+    expect(a.status).toBe(200);
+    expect(a.body).toMatchObject({ agentId: '182', independent: { operators: 1 }, clientAllowlistSize: 300 });
+    expect(a.body.topOperators).toHaveLength(20);
+    expect(a.body.clientAllowlist).toHaveLength(200);
+    expect(runs()).toBe(1); // two simultaneous requests share one run
+    const c = await request(app).get('/v1/agent/182/reputation');
+    expect(c.body.cached).toBe(true);
+    expect(runs()).toBe(1);
+    await request(app).get('/v1/agent/9/reputation');
+    expect(runs()).toBe(2);
+  });
+
+  it('rejects a bad id or network', async () => {
+    const { app } = build();
+    expect((await request(app).get('/v1/agent/abc/reputation')).status).toBe(400);
+    expect((await request(app).get('/v1/agent/1/reputation?network=devnet')).status).toBe(400);
+  });
+
+  it('says so when it is not set up', async () => {
+    const { app } = setup();
+    expect((await request(app).get('/v1/agent/182/reputation')).status).toBe(503);
   });
 });
