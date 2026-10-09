@@ -117,3 +117,56 @@ indexer.onEvent(
     });
   },
 );
+
+/** ERC-8004 feedback: how many entries, and from how many distinct reviewers, each agent has. */
+indexer.onEvent(
+  { contract: "ReputationRegistry", event: "NewFeedback", fields: { block: ["timestamp"] } },
+  async ({ event, context }) => {
+    const { agentId, clientAddress } = event.params;
+    const chainId = event.chainId;
+    const ts = event.block.timestamp;
+    const agentKey = agentId.toString();
+    const id = `${chainId}-${agentKey}`;
+    const clientId = `${id}-${clientAddress}`;
+    const [agent, client] = await Promise.all([context.Agent.get(id), context.AgentClient.get(clientId)]);
+
+    context.AgentClient.set({
+      id: clientId,
+      chainId,
+      agentId: agentKey,
+      client: clientAddress,
+      liveFeedback: (client?.liveFeedback ?? 0) + 1,
+      firstAt: client?.firstAt ?? ts,
+    });
+    context.Agent.set({
+      id,
+      chainId,
+      agentId: agentKey,
+      feedbackCount: (agent?.feedbackCount ?? 0) + 1,
+      // a reviewer counts again only when it comes back from zero live entries
+      distinctClients: (agent?.distinctClients ?? 0) + (client && client.liveFeedback > 0 ? 0 : 1),
+      revokedCount: agent?.revokedCount ?? 0,
+      firstFeedbackAt: agent?.firstFeedbackAt ?? ts,
+      lastFeedbackAt: ts,
+    });
+  },
+);
+
+indexer.onEvent(
+  { contract: "ReputationRegistry", event: "FeedbackRevoked" },
+  async ({ event, context }) => {
+    const { agentId, clientAddress } = event.params;
+    const chainId = event.chainId;
+    const id = `${chainId}-${agentId.toString()}`;
+    const clientId = `${id}-${clientAddress}`;
+    const [agent, client] = await Promise.all([context.Agent.get(id), context.AgentClient.get(clientId)]);
+    if (!agent || !client || client.liveFeedback === 0) return;
+    context.AgentClient.set({ ...client, liveFeedback: client.liveFeedback - 1 });
+    context.Agent.set({
+      ...agent,
+      feedbackCount: agent.feedbackCount - 1,
+      revokedCount: agent.revokedCount + 1,
+      distinctClients: agent.distinctClients - (client.liveFeedback === 1 ? 1 : 0),
+    });
+  },
+);

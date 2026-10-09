@@ -57,3 +57,25 @@ type SellerStats {
   distinctPayers: Int!
   totalReceived: BigInt!
 }
+
+"""An ERC-8004 agent that has received feedback: live counts, revoked entries excluded."""
+type Agent {
+  id: ID! # chainId-agentId
+  chainId: Int!
+  agentId: String! # token id as a decimal string
+  feedbackCount: Int!
+  distinctClients: Int!
+  revokedCount: Int!
+  firstFeedbackAt: Int!
+  lastFeedbackAt: Int!
+}
+
+"""One reviewer of one agent."""
+type AgentClient {
+  id: ID! # chainId-agentId-client
+  chainId: Int!
+  agentId: String! @index
+  client: String! @index
+  liveFeedback: Int!
+  firstAt: Int!
+}

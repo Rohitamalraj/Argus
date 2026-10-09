@@ -5,6 +5,7 @@ Indexes Argus data on **Monad mainnet (143)** and **Monad testnet (10143)** in o
 | Source | Event | Entities |
 | --- | --- | --- |
 | `PayerAttestations` registry | `Attested(wallet, attestor, operatorId, tier, expiresAt)` | `Verdict`, `Operator` (wallet and Linked counts per operator) |
+| ERC-8004 Reputation registry | `NewFeedback`, `FeedbackRevoked` | `Agent` (live feedback and distinct reviewers per agent), `AgentClient` |
 | USDC, filtered to the demo sellers' payTo wallets only | `Transfer(from, to, value)` | `SellerPayment`, `Payer`, `SellerStats` |
 
 The USDC handler uses a topic filter on `to`, so only payments to the demo sellers are synced, not every USDC transfer.

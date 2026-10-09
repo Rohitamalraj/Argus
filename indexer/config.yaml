@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./node_modules/envio/evm.schema.json
 name: argus-indexer
-description: Argus verdicts (PayerAttestations) and x402 seller payments on Monad
+description: Argus verdicts, x402 seller payments and ERC-8004 feedback on Monad
 address_format: lowercase
 contracts:
   - name: PayerAttestations
@@ -9,18 +9,32 @@ contracts:
   - name: USDC
     events:
       - event: "Transfer(address indexed from, address indexed to, uint256 value)"
+  # ERC-8004 Reputation registry (draft standard, deployed on Monad). Feedback only: the Identity
+  # registry has ~54,000 events and is not needed for operator-level reputation.
+  - name: ReputationRegistry
+    events:
+      - event: "NewFeedback(uint256 indexed agentId, address indexed clientAddress, uint64 feedbackIndex, int128 value, uint8 valueDecimals, string indexed indexedTag1, string tag1, string tag2, string endpoint, string feedbackURI, bytes32 feedbackHash)"
+      - event: "FeedbackRevoked(uint256 indexed agentId, address indexed clientAddress, uint64 indexed feedbackIndex)"
 chains:
   - id: 143 # Monad mainnet
-    start_block: 111713054 # registry deployment
+    start_block: 53567000 # just before the first ERC-8004 feedback (a per-contract start cannot be earlier than this)
     contracts:
       - name: PayerAttestations
         address: "0x151e488618FC0F79F7f91447351174Fb8D98cE98"
+        start_block: 111713054 # Argus registry deployment
       - name: USDC
         address: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603"
+        start_block: 111713054
+      - name: ReputationRegistry
+        address: "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
   - id: 10143 # Monad testnet
-    start_block: 69351670 # registry deployment
+    start_block: 11045000 # just before the first ERC-8004 feedback
     contracts:
       - name: PayerAttestations
         address: "0xd60EBFbc9955951322e9410Ec833bA040E9dB8dE"
+        start_block: 69351670 # Argus registry deployment
       - name: USDC
         address: "0x534b2f3A21130d7a60830c2Df862319e593943A3"
+        start_block: 69351670
+      - name: ReputationRegistry
+        address: "0x8004B663056A597Dffe9eCcC1965A193B7388713"

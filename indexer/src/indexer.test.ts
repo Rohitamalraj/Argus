@@ -13,6 +13,7 @@ const ZERO = "0x" + "00".repeat(32);
 const attested = (wallet: Hex, operatorId: string, tier: bigint) => ({
   contract: "PayerAttestations" as const,
   event: "Attested" as const,
+  block: { number: 69_400_000 },
   params: { wallet, attestor: ATTESTOR, operatorId, tier, expiresAt: 1_800_000_000n },
 });
 
@@ -67,6 +68,7 @@ describe("seller payments (EN-2)", () => {
     const pay = (from: Hex, value: bigint) => ({
       contract: "USDC" as const,
       event: "Transfer" as const,
+      block: { number: 69_400_000 },
       params: { from, to: SELLER, value },
     });
     await indexer.process({ chains: { 10143: { simulate: [pay(p1!, 1000n), pay(p1!, 2000n), pay(p2!, 1000n)] } } });
@@ -85,7 +87,7 @@ describe("seller payments (EN-2)", () => {
 describe("real testnet data (EN-1)", () => {
   it("indexes the first Argus attestation published on Monad testnet", async (t) => {
     const indexer = createTestIndexer();
-    const result = await indexer.process({ chains: { 10143: {} } });
+    const result = await indexer.process({ chains: { 10143: { startBlock: 69_361_000, endBlock: 69_470_000 } } });
     t.expect(result.changes.length).toBeGreaterThan(0);
     const verdicts = await indexer.Verdict.getAll();
     const payments = await indexer.SellerPayment.getAll();
@@ -93,5 +95,49 @@ describe("real testnet data (EN-1)", () => {
     // block timestamps are selected, so they are real values, not missing fields
     for (const v of verdicts) t.expect(v.attestedAt).toBeGreaterThan(1_700_000_000);
     for (const p of payments) t.expect(p.ts).toBeGreaterThan(1_700_000_000);
+  });
+});
+
+describe("ERC-8004 feedback", () => {
+  const feedback = (agentId: bigint, clientAddress: Hex) => ({
+    contract: "ReputationRegistry" as const,
+    event: "NewFeedback" as const,
+    params: { agentId, clientAddress, feedbackIndex: 0n, value: 100n, valueDecimals: 0n, indexedTag1: "x", tag1: "x", tag2: "", endpoint: "", feedbackURI: "", feedbackHash: "0x" + "00".repeat(32) },
+  });
+  const revoke = (agentId: bigint, clientAddress: Hex) => ({
+    contract: "ReputationRegistry" as const,
+    event: "FeedbackRevoked" as const,
+    params: { agentId, clientAddress, feedbackIndex: 0n },
+  });
+
+  it("counts entries and distinct reviewers per agent", async (t) => {
+    const indexer = createTestIndexer();
+    const [a, b] = Addresses.mockAddresses.map(lower);
+    await indexer.process({
+      chains: { 143: { simulate: [feedback(182n, a!), feedback(182n, a!), feedback(182n, b!), feedback(9n, a!)] } },
+    });
+    const agent = await indexer.Agent.getOrThrow("143-182");
+    t.expect({ feedbackCount: agent.feedbackCount, distinctClients: agent.distinctClients, agentId: agent.agentId }).toEqual({ feedbackCount: 3, distinctClients: 2, agentId: "182" });
+    t.expect((await indexer.Agent.getOrThrow("143-9")).distinctClients).toBe(1);
+    t.expect((await indexer.AgentClient.getOrThrow(`143-182-${a}`)).liveFeedback).toBe(2);
+  });
+
+  it("a revoked entry no longer counts, and a reviewer with none left stops counting", async (t) => {
+    const indexer = createTestIndexer();
+    const [a, b] = Addresses.mockAddresses.map(lower);
+    await indexer.process({
+      chains: { 143: { simulate: [feedback(5n, a!), feedback(5n, b!), revoke(5n, b!)] } },
+    });
+    const agent = await indexer.Agent.getOrThrow("143-5");
+    t.expect({ feedbackCount: agent.feedbackCount, distinctClients: agent.distinctClients, revokedCount: agent.revokedCount }).toEqual({ feedbackCount: 1, distinctClients: 1, revokedCount: 1 });
+  });
+
+  it("indexes real ERC-8004 feedback from Monad testnet", { timeout: 120_000 }, async (t) => {
+    const indexer = createTestIndexer();
+    const result = await indexer.process({ chains: { 10143: { startBlock: 11_045_842, endBlock: 11_300_000 } } });
+    t.expect(result.changes.length).toBeGreaterThan(0);
+    const agents = await indexer.Agent.getAll();
+    t.expect(agents.length).toBeGreaterThan(0);
+    for (const ag of agents) t.expect(ag.distinctClients).toBeLessThanOrEqual(ag.feedbackCount);
   });
 });
