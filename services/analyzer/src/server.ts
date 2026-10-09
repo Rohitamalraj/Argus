@@ -6,6 +6,8 @@ import { ROOT, attestorKey, env, sellerAddresses } from './env.ts';
 import { NETWORKS, type Network } from './networks.ts';
 import { ChainDataProvider } from './providers/chain.ts';
 import { HyperSyncClient } from './providers/hypersync.ts';
+import { Budget } from './budget.ts';
+import { NansenProvider } from './providers/nansen.ts';
 import { Publisher } from './publisher.ts';
 import { SimRunner } from './sim.ts';
 import { LocalKeySigner } from './signer.ts';
@@ -21,7 +23,34 @@ const providerFor = (n: Network): WalletIntel =>
   new ChainDataProvider(new HyperSyncClient(NETWORKS[n].hypersync, NETWORKS[n].usdc, env.envioToken, NETWORKS[n].usdcStartBlock), NETWORKS[n].chainId, configs[n]);
 const providers = { testnet: providerFor('testnet'), mainnet: providerFor('mainnet') };
 
-const assessor = new Assessor({ store, salt: env.salt, providers, configs });
+// Deep check (mainnet only): Nansen, by API key while it has credits, optionally paying per call over x402.
+async function buildNansen(): Promise<NansenProvider | undefined> {
+  const usdc = NETWORKS.mainnet.usdc;
+  let x402Fetch: typeof fetch | undefined;
+  if (env.nansenPayX402) {
+    const key = attestorKey('mainnet');
+    if (key) {
+      const { ExactEvmScheme } = await import('@x402/evm');
+      const { wrapFetchWithPaymentFromConfig } = await import('@x402/fetch');
+      const { privateKeyToAccount } = await import('viem/accounts');
+      x402Fetch = wrapFetchWithPaymentFromConfig(fetch, { schemes: [{ network: 'eip155:143', client: new ExactEvmScheme(privateKeyToAccount(key)) }] }) as typeof fetch;
+    }
+  }
+  if (!env.nansenApiKey && !x402Fetch) return undefined;
+  return new NansenProvider({
+    // With a key the key is used first; the x402 path sends no key (a valid key would take precedence over payment).
+    ...(env.nansenApiKey ? { apiKey: env.nansenApiKey } : {}),
+    ...(x402Fetch ? { x402Fetch } : {}),
+    usdc,
+    minFundingUsdc: 0.01,
+    budget: new Budget({ dailyCapUsd: env.nansenDailyCapUsd, perWalletCalls: 3 }),
+    log: console.log,
+  });
+}
+const nansen = await buildNansen();
+console.log(nansen ? `[nansen] deep check on for mainnet (${env.nansenApiKey ? 'API key' : 'x402'}, cap $${env.nansenDailyCapUsd}/day)` : '[nansen] off (no API key)');
+
+const assessor = new Assessor({ store, salt: env.salt, providers, configs, ...(nansen ? { deep: nansen } : {}) });
 
 for (const n of networks) {
   const key = attestorKey(n);

@@ -45,7 +45,7 @@ npm run status -w @argus/farm-sim -- --network testnet
 
 ## Data attribution
 
-Deep checks on Monad mainnet use the Nansen API. Powered by Nansen API.
+Deep checks on Monad mainnet use the Nansen API (see [docs/NANSEN.md](docs/NANSEN.md)). Powered by Nansen API.
 
 ## AI tool disclosure
 

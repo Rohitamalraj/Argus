@@ -11,7 +11,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "nansen-x402": "tsx src/cli/nansen-x402.ts",
     "dev": "tsx src/server.ts",
-    "start": "tsx src/server.ts"
+    "start": "tsx src/server.ts",
+    "assess-deep": "tsx src/cli/assess-deep.ts"
   },
   "dependencies": {
     "@argus/scoring": "*",

@@ -15,6 +15,11 @@ export const env = {
   /** Mainnet publishing spends real MON, so it is off unless switched on. */
   publishMainnet: process.env.PUBLISH_MAINNET === 'true',
   sellers: (process.env.SELLER_PAY_TO ?? '').split(',').filter(Boolean),
+  nansenApiKey: process.env.NANSEN_API_KEY ?? '',
+  /** Pay Nansen per call over x402 from the mainnet analyzer wallet (real USDC). Off unless switched on. */
+  nansenPayX402: process.env.NANSEN_PAY_X402 === 'true',
+  /** Daily Nansen spend cap in USD (1 credit = $0.01). */
+  nansenDailyCapUsd: Number(process.env.NANSEN_DAILY_CAP_USD ?? 0.6),
 };
 
 /**

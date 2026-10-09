@@ -70,7 +70,7 @@ export function argus(o: ArgusOptions, deps: ArgusDeps = {}): RequestHandler {
     if (paid.nonce) pendingPromo.delete(paid.nonce);
     if (key && BigInt(ctx.requirements.amount) === units.promo) store.consume(key);
     log(`[argus] settled ${ctx.requirements.amount} from ${paid.from}${key ? ` (promo ${key})` : ''}`);
-    report('/v1/paid', { network: o.network, wallet: paid.from, seller: o.seller ?? 'seller' }, paid.from);
+    report('/v1/paid', { network: o.network, wallet: paid.from, seller: o.seller ?? 'seller', promo: !!key }, paid.from);
   });
 
   const routes = Object.fromEntries(

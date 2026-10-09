@@ -22,6 +22,8 @@ export interface VerdictRecord {
   evidenceHash: Hex;
   issuedAt: number;
   expiresAt: number;
+  /** light: chain data only. deep: also cross-checked with Nansen (mainnet promo claims). */
+  depth?: 'light' | 'deep';
   /** Computed for a group member that has not asked yet (AN-3). */
   precomputed: boolean;
   /** The wallet paid a seller, so its verdict may be published (AN-7). */

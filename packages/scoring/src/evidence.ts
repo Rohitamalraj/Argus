@@ -19,6 +19,8 @@ export interface EvidenceBundle {
   agreement: Decision['agreement'];
   decision: { tier: number; tierName: string; confidence: string; operatorId: string };
   reasons: string[];
+  /** Counts from a second source, kept apart from the decision (e.g. Nansen sees the funder paying N wallets). */
+  crossCheck?: { funderRecipients?: number };
   attribution?: 'Powered by Nansen API';
 }
 
@@ -27,6 +29,7 @@ export function buildEvidenceBundle(
   network: 'mainnet' | 'testnet',
   providers: ProviderCost[],
   generatedAt: number,
+  crossCheck?: EvidenceBundle['crossCheck'],
 ): EvidenceBundle {
   const usedNansen = providers.some((p) => p.name === 'nansen' && p.calls > 0);
   return {
@@ -40,6 +43,7 @@ export function buildEvidenceBundle(
     agreement: d.agreement,
     decision: { tier: d.tier, tierName: d.tierName, confidence: d.confidence, operatorId: d.operatorId },
     reasons: d.reasons,
+    ...(crossCheck && Object.keys(crossCheck).length > 0 ? { crossCheck } : {}),
     ...(usedNansen ? { attribution: 'Powered by Nansen API' as const } : {}),
   };
 }

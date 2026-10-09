@@ -100,7 +100,7 @@ describe('402 quotes through @x402/express (MW-5)', () => {
   const quoted = async (headers: Record<string, string>) => {
     const r = await request(app).get('/api/premium').set(headers);
     expect(r.status).toBe(402);
-    const required = JSON.parse(Buffer.from(r.headers['payment-required'], 'base64').toString('utf8'));
+    const required = JSON.parse(Buffer.from(r.headers['payment-required'] as string, 'base64').toString('utf8'));
     return { amount: required.accepts[0].amount as string, network: required.accepts[0].network, tier: r.headers['x-argus-tier'] };
   };
 

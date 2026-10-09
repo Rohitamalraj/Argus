@@ -6,7 +6,7 @@ Results of the verification checklist in the PRD. Each check has a fallback, so 
 | --- | --- | --- | --- |
 | V1 | Can `@x402/express` set a different price per payer? | **Pass.** `PaymentOption.price` accepts a function of the request context (headers and the payment header), re-evaluated on the paid retry; `x402ResourceServer.onAfterSettle` gives the signed payload for promo counting. The Monad facilitator lists `exact` on eip155:143 and eip155:10143 | 2026-10-09 |
 | V2 | Can HyperIndex filter USDC transfers to the seller wallets only? | **Pass.** HyperIndex V3 `where: ({ chain }) => ({ params: [{ to: sellers }] })` topic-filters `Transfer` by recipient per chain; tested against real testnet blocks. Envio needs WSL 2 on Windows | 2026-10-09 |
-| V3 | How long does Nansen take to see a new Monad wallet? | Open. A wallet bridged in on 2026-10-08 19:57 UTC already had its First Funder in `related-wallets` on 2026-10-09 | 2026-10-09 |
+| V3 | How long does Nansen take to see a new Monad wallet? | **Pass.** Wallets funded at 19:57 and 21:07 UTC on 8 Oct were all visible in `transactions` the next morning; exact lag not measured. Nansen indexes `transactions` for USDC-only wallets, while `related-wallets` First Funder tracks MON only | 2026-10-09 |
 | V4 | HyperSync mainnet URL, and is an API token needed? | **Pass.** `https://monad.hypersync.xyz` (mainnet) and `https://monad-testnet.hypersync.xyz` both answer; queries need a bearer token (bad token returns 401), free from envio.dev. Free tier is 15,000 cost units per 60 s at about 1,000 per query, so the provider batches all wallets (6 queries for the 13-wallet demo) | 2026-10-09 |
 | V5 | Nansen API key (for MCP and CLI)? | **Pass.** Free plan: 100 credits plus 10 per day; profiler calls cost 1 credit. `related-wallets --chain monad` works on mainnet | 2026-10-09 |
 | V6 | Do Dynamic policies apply to EIP-3009 typed-data signing on Monad (SG-4)? | **Docs say no.** Policies are enforced by simulating transactions; the policy-violation webhook lists only `evmTransaction`, `evmUserOperation`, `svmTransaction` and `svmMessage`, with no EVM typed-data operation. Plan: Dynamic signs registry writes (transactions, where an allowlist and value cap apply); Nansen x402 payments use a small dedicated key. An on-chain test of a blocked transaction is still to do | 2026-10-09 |
@@ -43,3 +43,8 @@ Results of the verification checklist in the PRD. Each check has a fallback, so 
 - Indexer deployed on Envio Cloud (`rohitamalraj/argus`, root `indexer`, branch `main`, HyperIndex 3.14.0): both chains (143, 10143) synced 100% in under a minute.
 - Live GraphQL (testnet): 75 payments from 13 distinct payers to the demo seller, 4 on-chain operators (1 Linked with 10 wallets, 3 Independent).
 - The dashboard's "On-chain activity" panel reads these numbers from the Envio GraphQL API (DB-5).
+
+## Nansen deep check (9 Oct)
+
+- `npm run assess-deep -w @argus/analyzer`: 13 mainnet wallets, 13/13 correct, both sources agree on all 13 first funders, Nansen sees the funder paying 10 wallets; 14 Nansen calls, $0.18, 82 s. See [NANSEN.md](NANSEN.md).
+- Address poisoning seen live: a lookalike `UṢDC` token from a lookalike address in farm-01's history. Argus matches the USDC contract address, never the symbol.

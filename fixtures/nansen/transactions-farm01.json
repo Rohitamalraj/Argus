@@ -1,0 +1,42 @@
+{
+  "_note": "Recorded from POST /api/v1/profiler/address/transactions on Monad mainnet (farm-01, 2026-10-09). Includes a lookalike 'UṢDC' token sent from a lookalike address (address poisoning). Labels removed.",
+  "pagination": { "page": 1, "per_page": 100, "is_last_page": true },
+  "data": [
+    {
+      "chain": "monad",
+      "method": "transfer(address,uint256)",
+      "tokens_sent": [],
+      "tokens_received": [
+        {
+          "token_symbol": "USDC",
+          "token_amount": 0.2,
+          "token_address": "0x754704bc059f8c67012fed69bc8a327a5aafb603",
+          "from_address": "0xffa82555a85e3e0220c7070a33604441b4526869",
+          "to_address": "0x971e94fed75a8f527566206e68d85e52f050c6d1"
+        }
+      ],
+      "volume_usd": 0.1999437096272088,
+      "block_timestamp": "2026-10-08T21:07:52",
+      "transaction_hash": "0x88d05caefaab56f58dd73a3497b30560af27d3f25d077e0bb7254018d6feaad9",
+      "source_type": "transfer"
+    },
+    {
+      "chain": "monad",
+      "method": "transfer(address[],address[],uint256[])",
+      "tokens_sent": [],
+      "tokens_received": [
+        {
+          "token_symbol": "UṢDC",
+          "token_amount": 0.2,
+          "token_address": "0x29f9c424803ac7b09d97ee218adbbb9329703946",
+          "from_address": "0xffa8c9768299a3ea259c0b1c05e0b96dfc526869",
+          "to_address": "0x971e94fed75a8f527566206e68d85e52f050c6d1"
+        }
+      ],
+      "volume_usd": null,
+      "block_timestamp": "2026-10-08T21:27:31",
+      "transaction_hash": "0x242d36d1a463dbcd407033fdddd63d958a1084b2b58e5738800aba4cb308422d",
+      "source_type": "transfer"
+    }
+  ]
+}

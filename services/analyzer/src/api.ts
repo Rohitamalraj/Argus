@@ -54,8 +54,9 @@ export function createApi({ store, assessor, sim, now = () => Math.floor(Date.no
       const net = network(req.body?.network);
       const wallets = (Array.isArray(req.body?.wallets) ? req.body.wallets : []).map(address);
       if (wallets.length === 0 || wallets.length > 100) throw new HttpError(400, 'wallets must hold 1 to 100 addresses');
-      const verdicts = await assessor.assess(net, wallets, req.body?.fresh === true);
-      res.json({ verdicts, depth: 'light', cost: { usd: 0 } });
+      const depth = req.body?.depth === 'deep' ? 'deep' : 'light';
+      const verdicts = await assessor.assess(net, wallets, req.body?.fresh === true, depth);
+      res.json({ verdicts, depth: verdicts.every((v) => v.depth === 'deep') ? 'deep' : 'light', requestedDepth: depth });
     }),
   );
 
@@ -77,7 +78,8 @@ export function createApi({ store, assessor, sim, now = () => Math.floor(Date.no
       const wallet = address(req.body?.wallet);
       const seller = String(req.body?.seller ?? 'unknown').slice(0, 100);
       store.markPaid(net, wallet, seller, now());
-      const [v] = await assessor.assess(net, [wallet]);
+      // A settled promo claim on mainnet also gets the Nansen cross-check (AN-2); everything else stays light.
+      const [v] = await assessor.assess(net, [wallet], false, req.body?.promo === true ? 'deep' : 'light');
       store.markPaid(net, wallet, seller, now()); // the verdict row may not have existed before
       res.json(store.getVerdict(net, wallet) ?? v);
     }),
