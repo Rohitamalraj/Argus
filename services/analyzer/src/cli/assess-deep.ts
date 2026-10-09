@@ -11,8 +11,7 @@ import { Assessor } from '../assessor.ts';
 import { Budget } from '../budget.ts';
 import { ROOT, env, sellerAddresses } from '../env.ts';
 import { NETWORKS } from '../networks.ts';
-import { ChainDataProvider } from '../providers/chain.ts';
-import { HyperSyncClient } from '../providers/hypersync.ts';
+import { ChainDataProvider, HyperSyncClient } from '@argus/sdk';
 import { NansenProvider } from '../providers/nansen.ts';
 import { Store } from '../store.ts';
 

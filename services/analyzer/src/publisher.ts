@@ -1,5 +1,5 @@
 import type { Address } from '@argus/scoring';
-import { registryAbi } from './registry.ts';
+import { registryAbi } from '@argus/sdk';
 import type { Network } from './networks.ts';
 import type { Signer } from './signer.ts';
 import type { Store } from './store.ts';

@@ -27,6 +27,10 @@ export interface ScoringConfig {
   syncActivationShare: number;
   /** S4: share of G(F) outflow value going back to F or to one shared address. */
   closureShare: number;
+  /** S5: share of a context set (e.g. one agent's feedback clients) first funded by one funder... */
+  concentrationShare: number;
+  /** ...and the fewest wallets that makes it count. A funder on the known-hub list never triggers S5. */
+  concentrationMinWallets: number;
   /** Private seller hints. */
   hintFlatClockAmplitude: number;
   hintFlatClockMinRequests: number;
@@ -45,6 +49,8 @@ export const DEFAULT_CONFIG: ScoringConfig = {
   instalmentTolerance: 0.01,
   syncActivationShare: 0.7,
   closureShare: 0.9,
+  concentrationShare: 0.5,
+  concentrationMinWallets: 10,
   hintFlatClockAmplitude: 0.15,
   hintFlatClockMinRequests: 50,
   hintConcentrationShare: 0.9,

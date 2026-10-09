@@ -8,8 +8,7 @@ import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { decide, knownHubsFor, makeConfig, type Address, type Hex } from '@argus/scoring';
 import { NETWORKS, type Network } from '../networks.ts';
-import { ChainDataProvider } from '../providers/chain.ts';
-import { HyperSyncClient } from '../providers/hypersync.ts';
+import { ChainDataProvider, HyperSyncClient } from '@argus/sdk';
 
 const ROOT = resolve(import.meta.dirname, '../../../..');
 loadEnv({ path: resolve(ROOT, '.env'), quiet: true });

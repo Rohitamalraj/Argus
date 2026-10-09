@@ -27,17 +27,22 @@ export function assembleInput(
   wallet: Address,
   transfers: Transfer[],
   cfg: ScoringConfig = DEFAULT_CONFIG,
+  opts: Pick<AssessmentInput, 'asset' | 'concentration'> = {},
 ): AssessmentInput {
+  const extra = { ...(opts.asset ? { asset: opts.asset } : {}), ...(opts.concentration ? { concentration: opts.concentration } : {}) };
   const funding = firstFunding(transfers, wallet, cfg.minFunding);
   if (!funding) {
-    return { chainId, wallet, firstFunder: null, funderRecipientCount: 0, group: [], funderTransfers: [], groupOutflows: [] };
+    return { chainId, wallet, firstFunder: null, funderRecipientCount: 0, group: [], funderTransfers: [], groupOutflows: [], ...extra };
   }
   const F = funding.from;
   const f = lc(F);
   const funderRecipientCount = countHubRecipients(transfers, F, cfg.hubMinTransfer);
+  const c = opts.concentration;
+  // A funder that dominates a context set (S5) is not treated as a hub, unless it is on the known-hub list.
+  const concentrated = !!c && !cfg.knownHubs.has(f) && c.share >= cfg.concentrationShare && c.wallets >= cfg.concentrationMinWallets;
 
   // A hub never links anyone, so its recipients are not a group.
-  if (cfg.knownHubs.has(f) || funderRecipientCount > cfg.hubRecipientThreshold) {
+  if ((cfg.knownHubs.has(f) || funderRecipientCount > cfg.hubRecipientThreshold) && !concentrated) {
     return {
       chainId,
       wallet,
@@ -46,6 +51,7 @@ export function assembleInput(
       group: [{ wallet, firstFundedAt: funding.timestamp }],
       funderTransfers: [funding],
       groupOutflows: [],
+      ...extra,
     };
   }
 
@@ -69,5 +75,6 @@ export function assembleInput(
     group,
     funderTransfers: transfers.filter((t) => lc(t.from) === f && members.has(lc(t.to))),
     groupOutflows: transfers.filter((t) => members.has(lc(t.from))),
+    ...extra,
   };
 }

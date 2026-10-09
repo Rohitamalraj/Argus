@@ -64,6 +64,13 @@ export interface AssessmentInput {
   sources?: SourceView[];
   /** Set when a provider failed; forces Unclear. */
   dataError?: string;
+  /** The asset the funding was traced in. Defaults to USDC with 6 decimals. */
+  asset?: { symbol: string; decimals: number };
+  /**
+   * Context concentration (S5): what share of a context set of wallets (for example every feedback client
+   * of one ERC-8004 agent) were first funded by this funder. Public chain data only.
+   */
+  concentration?: { share: number; wallets: number; context: string };
 }
 
 export interface Signals {
@@ -71,6 +78,8 @@ export interface Signals {
   S2: boolean;
   S3: boolean;
   S4: boolean;
+  /** Only present when a context set was supplied. */
+  S5?: boolean;
 }
 
 export type Agreement = 'both-sources' | 'single-source' | 'disagree';
