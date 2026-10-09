@@ -48,3 +48,7 @@ Results of the verification checklist in the PRD. Each check has a fallback, so 
 
 - `npm run assess-deep -w @argus/analyzer`: 13 mainnet wallets, 13/13 correct, both sources agree on all 13 first funders, Nansen sees the funder paying 10 wallets; 14 Nansen calls, $0.18, 82 s. See [NANSEN.md](NANSEN.md).
 - Address poisoning seen live: a lookalike `UṢDC` token from a lookalike address in farm-01's history. Argus matches the USDC contract address, never the symbol.
+
+## Envio, ERC-8004 (10 Oct)
+
+- The indexer now also indexes the ERC-8004 Reputation registry (`NewFeedback`, `FeedbackRevoked`) on both chains. Redeployed on Envio Cloud (HyperIndex 3.14.0); GraphQL reports agent 182 with 7,665 distinct reviewers and agent 10182 with 16 reviewers and 78 entries, matching the SDK exactly. Promote needs a paid plan; the deployment endpoint is used instead.

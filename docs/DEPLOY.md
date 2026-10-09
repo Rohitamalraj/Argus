@@ -40,7 +40,7 @@ Import the repo and set **Root Directory** to `apps/dashboard`. Environment vari
 
 ## 3. Envio
 
-Each push to `main` makes a new deployment (3 allowed). In the Envio dashboard, delete old deployments, then **Promote** the one you want: promotion gives a stable production endpoint that does not change on redeploys. Use that URL above.
+In Envio Cloud, open the indexer, **Deploy** the latest commit of `main` (deployments are manual once you delete the old ones; 3 are allowed), and wait until both chains show Synced 100%. **Promote** needs a paid plan, so use the **Deployment Endpoint** instead (eye icon, then copy): it stays valid as long as that deployment is kept. Do not delete it. Use that URL above.
 
 ## 4. Access instructions for judges
 
