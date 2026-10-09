@@ -57,6 +57,11 @@ export interface TransferQuery {
   fromBlock?: number;
   /** Stop paging once this many transfers are collected (hub short-circuit). */
   maxTransfers?: number;
+  /**
+   * Stop paging as soon as this returns true. Blocks arrive oldest first, so a caller that only needs the earliest
+   * matching transfers (a first funder) can stop once it has them instead of reading a busy wallet's whole history.
+   */
+  stop?: (soFar: Transfer[]) => boolean;
 }
 
 /** Minimal HyperSync JSON client: ERC-20 Transfer logs of one token, native transfers, and raw contract logs. */
@@ -131,11 +136,11 @@ export class HyperSyncClient implements ChainReader {
   }
 
   async transfers(q: TransferQuery): Promise<Transfer[]> {
-    return this.transfersAny([q], q.maxTransfers, q.fromBlock);
+    return this.transfersAny([q], q.maxTransfers, q.fromBlock, q.stop);
   }
 
   /** Transfers matching any of the selections, in one paged query (one rate-limit unit per page). */
-  async transfersAny(selections: Omit<TransferQuery, 'fromBlock' | 'maxTransfers'>[], maxTransfers?: number, startBlock?: number): Promise<Transfer[]> {
+  async transfersAny(selections: Omit<TransferQuery, 'fromBlock' | 'maxTransfers' | 'stop'>[], maxTransfers?: number, startBlock?: number, stop?: (soFar: Transfer[]) => boolean): Promise<Transfer[]> {
     const logs = selections.map((s) => ({
       address: [this.token],
       topics: [[TRANSFER_TOPIC], (s.from ?? []).map(pad), (s.to ?? []).map(pad)],
@@ -165,6 +170,7 @@ export class HyperSyncClient implements ChainReader {
         }
       }
       if (maxTransfers && out.length >= maxTransfers) break;
+      if (stop?.(out)) break;
       if (res.next_block > res.archive_height || res.next_block <= fromBlock) break;
       fromBlock = res.next_block;
     }
@@ -172,16 +178,21 @@ export class HyperSyncClient implements ChainReader {
   }
 
   private async query(body: unknown, attempts = 6): Promise<RawResponse> {
+    const debug = typeof process !== 'undefined' && !!process.env.ARGUS_DEBUG;
     for (let attempt = 1; ; attempt++) {
+      const t0 = Date.now();
       const r = await fetch(`${this.url}/query`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${this.apiToken}` },
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(60_000),
       });
+      if (debug) console.error(`[hypersync] ${r.status} ${Date.now() - t0} ms ${JSON.stringify(body).slice(0, 90)}`);
       if (r.ok) {
         this.calls++;
-        return (await r.json()) as RawResponse;
+        const json = (await r.json()) as RawResponse;
+        if (debug) console.error(`[hypersync]   -> next_block ${json.next_block} of ${json.archive_height}`);
+        return json;
       }
       const retryable = r.status === 429 || r.status >= 500;
       if (!retryable || attempt >= attempts) {

@@ -67,6 +67,7 @@ Argus answers one question: are these wallets one operator or many? It answers f
 ## Known limits
 
 - Funding is traced through **direct transfers**. A wallet funded through a contract shows no inbound transfer and counts as independent.
+- Free-tier HyperSync allows about 15 queries a minute. A first-funder lookup stops as soon as every wallet has its earliest funding, so recent wallets are fast; a wallet that never received 0.01 USDC makes the lookup scan the whole USDC history (a few minutes). Hub detection reads at most 2,500 transfers per funder, and members’ outflows are dropped when they are too large to read.
 - Evasion by funding every wallet from a different source is possible; Argus raises the cost and does not claim proof of personhood.
 - Nansen has no Monad testnet, so deep checks run on mainnet only.
 - ERC-8004 is a draft standard, and the Validation registry is not yet deployed on Monad mainnet.

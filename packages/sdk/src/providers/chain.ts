@@ -19,6 +19,26 @@ const CHUNK = 500;
 const HUB_PROBE = 2_500;
 /** Ceiling when the small funders are re-read in full. */
 const FUNDER_FULL_CAP = 20_000;
+/** Earliest inbound transfers read for the members of a funder's group. */
+const MEMBER_INBOUND_CAP = 20_000;
+/** Outflows of a group's members; beyond this they are not used. */
+const MEMBER_OUTBOUND_CAP = 5_000;
+
+/**
+ * Early-stop test for a first-funder lookup: true once every wallet in `part` has an inbound transfer of at least
+ * `min`. Pages arrive oldest first, so by then each wallet's earliest qualifying transfer is already in hand.
+ */
+const allFunded = (part: Address[], min: bigint) => {
+  const done = new Set<string>();
+  let scanned = 0;
+  return (out: Transfer[]) => {
+    for (; scanned < out.length; scanned++) {
+      const t = out[scanned]!;
+      if (t.amount >= min && t.from !== t.to) done.add(t.to.toLowerCase());
+    }
+    return part.every((w) => done.has(w.toLowerCase()));
+  };
+};
 
 const chunks = <T>(xs: T[], n: number) => Array.from({ length: Math.ceil(xs.length / n) }, (_, i) => xs.slice(i * n, i * n + n));
 const key = (t: Transfer) => `${t.txHash}:${t.from}:${t.to}:${t.amount}`.toLowerCase();
@@ -51,7 +71,7 @@ export class ChainDataProvider {
     const targets = [...new Set(wallets.map(lc))];
 
     // 1. Inbound USDC to every target: gives each first funder F.
-    const inbound = await this.many((part) => this.hs.transfers({ to: part }), targets);
+    const inbound = await this.many((part) => this.hs.transfers({ to: part, stop: allFunded(part, this.cfg.minFunding) }), targets);
     const funders = new Set<Address>();
     for (const w of targets) {
       const f = firstFunding(inbound, w, this.cfg.minFunding);
@@ -74,10 +94,15 @@ export class ChainDataProvider {
     const recipients = [
       ...new Set(fOut.filter((t) => bespokeSet.has(lc(t.from)) && t.amount >= this.cfg.minFunding).map((t) => lc(t.to))),
     ];
-    const inOutR = await this.many((part) => this.hs.transfersAny([{ to: part }, { from: part }]), recipients);
+    // Inbound: the earliest transfers carry each member's first funder, so a cap is safe (a member first funded after the
+    // cutoff just drops out of the group, which can only make a group smaller). Outflows only feed S3 and S4; a busy
+    // wallet (a trading bot can have 100,000 transfers) makes them too big to read, so they are dropped, never half-used.
+    const inR = await this.many((part) => this.hs.transfers({ to: part, maxTransfers: MEMBER_INBOUND_CAP, stop: allFunded(part, this.cfg.minFunding) }), recipients);
+    let outR = await this.many((part) => this.hs.transfers({ from: part, maxTransfers: MEMBER_OUTBOUND_CAP }), recipients);
+    if (outR.length >= MEMBER_OUTBOUND_CAP) outR = [];
 
     const seen = new Set<string>();
-    const all = [...inbound, ...fOut, ...inOutR].filter((t) => (seen.has(key(t)) ? false : (seen.add(key(t)), true)));
+    const all = [...inbound, ...fOut, ...inR, ...outR].filter((t) => (seen.has(key(t)) ? false : (seen.add(key(t)), true)));
     return { inputs: wallets.map((w) => assembleInput(this.chainId, w, all, this.cfg)), transfers: all };
   }
 
