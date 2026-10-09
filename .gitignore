@@ -20,3 +20,4 @@ data/
 next-env.d.ts
 *.tsbuildinfo
 .shots/
+release/

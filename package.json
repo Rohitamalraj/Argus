@@ -14,13 +14,15 @@
     "test": "npm run test --workspaces --if-present && npm run test:contracts",
     "test:contracts": "cd contracts && forge test",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "deploy:registry": "node scripts/deploy-registry.mjs"
+    "deploy:registry": "node scripts/deploy-registry.mjs",
+    "release:build": "node scripts/release.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "tsup": "^8.5.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

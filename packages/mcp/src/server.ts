@@ -93,7 +93,7 @@ export function createServer(argusFor: ArgusFactory, opts: { defaultSample?: num
         const r = await argusFor(net).agentReputation(agentId, { maxClients: sampleClients ?? opts.defaultSample ?? 800 });
         const sampled = r.sampled ? ` (traced a sample of ${r.sampled.analyzed} of ${r.sampled.total} reviewers)` : '';
         const lines = [
-          `ERC-8004 agent ${r.agentId}: ${r.raw.feedbackCount} feedback entries from ${r.raw.distinctClients} reviewers, which come from ${r.independent.operators} operator${r.independent.operators === 1 ? '' : 's'}${sampled}.`,
+          `ERC-8004 agent ${r.agentId}: ${r.raw.feedbackCount} feedback entries from ${r.raw.distinctClients} reviewer${r.raw.distinctClients === 1 ? '' : 's'}, which come from ${r.independent.operators} operator${r.independent.operators === 1 ? '' : 's'}${sampled}.`,
           r.independent.linkedOperators ? `${r.independent.linkedOperators} Linked fleet(s); the largest operator holds ${pct(r.largestOperatorShare)} of the traced reviewers.` : 'No Linked fleets found.',
           r.raw.implausibleValues ? `${r.raw.implausibleValues} entries have absurd values (beyond 1e15) and are excluded from the means.` : '',
           `Mean feedback value: ${r.raw.meanValue?.toFixed(1) ?? 'n/a'} raw, ${r.independent.meanValue?.toFixed(1) ?? 'n/a'} counting each operator once.`,

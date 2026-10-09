@@ -1,10 +1,10 @@
 #!/usr/bin/env -S npx tsx
 /**
- * argus: check wallets and ERC-8004 agent reputation from the command line.
+ * argus-x402: check wallets and ERC-8004 agent reputation from the command line.
  *
- *   argus reputation <agentId> [--network mainnet|testnet] [--json]
- *   argus check <wallet> [--network ...]
- *   argus verify <wallet> [--attestor 0x...] [--network ...]
+ *   argus-x402 reputation <agentId> [--network mainnet|testnet] [--json]
+ *   argus-x402 check <wallet> [--network ...]
+ *   argus-x402 verify <wallet> [--attestor 0x...] [--network ...]
  *
  * Needs a free Envio HyperSync token in ENVIO_API_TOKEN (https://envio.dev/app/api-tokens).
  * Everything is recomputed locally from public chain data; no wallet address is sent to an Argus server.
@@ -31,7 +31,7 @@ const json = argv.includes('--json');
 const network = (flag('--network') ?? 'mainnet') as Network;
 
 const usage = () => {
-  console.log(`argus <command>
+  console.log(`argus-x402 <command>
 
   reputation <agentId>   ERC-8004 reputation, deduplicated by operator (--sample N traces N clients for speed)
   check <wallet>         operator-independence verdict, recomputed locally
@@ -52,7 +52,7 @@ async function main() {
   const argus = createArgus({ network, hypersyncToken: process.env.ENVIO_API_TOKEN });
 
   if (command === 'reputation') {
-    if (!subject || !/^\d+$/.test(subject)) throw new Error('usage: argus reputation <agentId>');
+    if (!subject || !/^\d+$/.test(subject)) throw new Error('usage: argus-x402 reputation <agentId>');
     const sample = flag('--sample');
     const r = await argus.agentReputation(subject, {
       ...(sample ? { maxClients: Number(sample) } : {}),
@@ -75,7 +75,7 @@ async function main() {
     return;
   }
 
-  if (!subject || !isAddress(subject)) throw new Error(`usage: argus ${command} <wallet address>`);
+  if (!subject || !isAddress(subject)) throw new Error(`usage: argus-x402 ${command} <wallet address>`);
   const wallet = subject as Address;
 
   if (command === 'check') {
@@ -99,6 +99,6 @@ async function main() {
 }
 
 main().catch((e: Error) => {
-  console.error(`argus: ${e.message}`);
+  console.error(`argus-x402: ${e.message}`);
   process.exitCode = 1;
 });
