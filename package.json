@@ -15,7 +15,8 @@
     "test:contracts": "cd contracts && forge test",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "deploy:registry": "node scripts/deploy-registry.mjs",
-    "release:build": "node scripts/release.mjs"
+    "release:build": "node scripts/release.mjs",
+    "mainnet:run": "node scripts/mainnet-run.mjs"
   },
   "engines": {
     "node": ">=20"
