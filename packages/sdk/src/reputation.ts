@@ -1,4 +1,4 @@
-import { Tier, decide, makeConfig, type Address, type AssessmentInput, type Confidence, type GroupMember, type Hex, type ScoringConfig, type Transfer } from '@argus/scoring';
+import { Tier, decide, knownNativeHubsFor, makeConfig, type Address, type AssessmentInput, type Confidence, type GroupMember, type Hex, type ScoringConfig, type Transfer } from '@argus/scoring';
 import { fetchAgentFeedback, type Feedback } from './erc8004.ts';
 import { readAgentProfile, type AgentIdentityReader, type AgentProfile } from './identity.ts';
 import type { Network, NetworkInfo } from './networks.ts';
@@ -92,7 +92,7 @@ const mean = (xs: number[]) => (xs.length ? xs.reduce((s, x) => s + x, 0) / xs.l
 export async function agentReputation(agentId: bigint | number | string, o: ReputationOptions): Promise<AgentReputation> {
   const net: NetworkInfo = NETWORKS[o.network];
   const id = BigInt(agentId);
-  const cfg = o.config ?? nativeConfig(o.knownHubs);
+  const cfg = o.config ?? nativeConfig([...knownNativeHubsFor(net.chainId), ...(o.knownHubs ?? [])]);
   const log = o.onProgress ?? (() => {});
   const profileP: Promise<AgentProfile | undefined> = o.identity ? readAgentProfile(o.identity, id, { fetchMetadata: o.fetchMetadata }).catch(() => undefined) : Promise.resolve(undefined);
 

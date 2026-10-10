@@ -23,3 +23,17 @@ export const KNOWN_HUBS: Record<number, Record<string, string>> = {
 };
 
 export const knownHubsFor = (chainId: number): string[] => Object.keys(KNOWN_HUBS[chainId] ?? {});
+
+/**
+ * Known hubs for native MON funding (ERC-8004 reviewers). Separate from the USDC list: an address can be a hub for
+ * one asset and silent in the other (the USDC bridge payout and the Uniswap pool never send native MON).
+ * Checked on 2026-10-10 against the reviewers of the ten most reviewed mainnet agents: no exchange-like funder
+ * appears, and the funders seen sent to 1, 7 and 29 wallets, so none qualifies. Until one is confirmed from data
+ * the generic rule decides (more than 200 recipients of at least 0.1 MON). Add an address with how it was confirmed.
+ */
+export const KNOWN_NATIVE_HUBS: Record<number, Record<string, string>> = {
+  143: {},
+  10143: {},
+};
+
+export const knownNativeHubsFor = (chainId: number): string[] => Object.keys(KNOWN_NATIVE_HUBS[chainId] ?? {});

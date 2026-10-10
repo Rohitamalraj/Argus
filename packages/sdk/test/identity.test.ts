@@ -159,3 +159,12 @@ describe('agent registration files', () => {
     expect(parseAgentMetadata('nonsense')).toEqual({});
   });
 });
+
+describe('native-MON hubs', () => {
+  it('a funder on the hub list never links its reviewers', async () => {
+    const hub = addr(0xfeed);
+    const r = await agentReputation(AGENT, { chain: scenario(hub), network: 'mainnet', knownHubs: [hub] });
+    expect(r.independent.linkedOperators).toBe(0);
+    expect(r.operators.every((o) => o.kind !== 'linked')).toBe(true);
+  });
+});
