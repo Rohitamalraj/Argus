@@ -28,7 +28,8 @@ check.matches; // true
 const rep = await argus.agentReputation(182);
 rep.raw.distinctClients;   // 7665 reviewers
 rep.independent.operators; // 1
-rep.clientAllowlist;       // one reviewer per operator: pass to getSummary(agentId, clientAddresses, '', '')
+rep.clientAllowlist;       // one reviewer per operator, minus the owner's own fleet: pass to getSummary(agentId, clientAddresses, '', '')
+rep.ownerLinked;           // { operators: 1, clients: 7665, share: 1 }: the agent's owner funded its own reviewers
 ```
 
 ## Verify payers in your x402 seller, with no Argus server

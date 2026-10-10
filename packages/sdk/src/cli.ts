@@ -60,11 +60,13 @@ async function main() {
     });
     if (json) return console.log(stringify(r));
     const s = r.sampled ? ` (sample of ${n(r.sampled.analyzed)} clients)` : '';
-    console.log(`\nERC-8004 agent ${r.agentId} on ${argus.network.name}`);
+    console.log(`\nERC-8004 agent ${r.agentId}${r.agent?.name ? ` "${r.agent.name}"` : ''} on ${argus.network.name}`);
+    if (r.agent?.owner) console.log(`  owner          ${r.agent.owner}`);
     console.log(`  raw            ${n(r.raw.feedbackCount)} feedback entries from ${n(r.raw.distinctClients)} clients (mean value ${fixed(r.raw.meanValue)})`);
     if (r.raw.implausibleValues) console.log(`                 ${n(r.raw.implausibleValues)} entries have absurd values (beyond 1e15) and are left out of every mean`);
     console.log(`  by operator    ${n(r.independent.operators)} operator${r.independent.operators === 1 ? '' : 's'}${s}; ${r.independent.linkedOperators ? `${n(r.independent.linkedOperators)} of them a Linked fleet` : 'none linked'} (mean value ${fixed(r.independent.meanValue)})`);
     console.log(`  largest        one operator holds ${pct(r.largestOperatorShare)} of ${r.sampled ? 'the sampled' : 'all'} clients`);
+    if (r.ownerLinked?.clients) console.log(`  owner-funded   ${n(r.ownerLinked.clients)} reviewers (${pct(r.ownerLinked.share)}) were funded by the agent's own owner; ${n(r.independent.unrelatedToOwner ?? 0)} operator(s) are unrelated to it`);
     if (r.unattributed) console.log(`  unattributed   ${n(r.unattributed)} clients had no visible MON funding and are counted as independent`);
     for (const op of r.operators.slice(0, 5)) {
       console.log(`\n  ${op.kind === 'linked' ? 'Linked' : op.kind === 'independent' ? 'Independent' : 'Unattributed'}  ${op.id.slice(0, 22)}...  ${n(op.clients)} client(s), ${n(op.feedbackCount)} feedback (${op.confidence})`);

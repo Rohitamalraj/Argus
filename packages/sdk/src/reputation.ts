@@ -1,5 +1,6 @@
 import { Tier, decide, makeConfig, type Address, type AssessmentInput, type Confidence, type GroupMember, type Hex, type ScoringConfig, type Transfer } from '@argus/scoring';
 import { fetchAgentFeedback, type Feedback } from './erc8004.ts';
+import { readAgentProfile, type AgentIdentityReader, type AgentProfile } from './identity.ts';
 import type { Network, NetworkInfo } from './networks.ts';
 import { NETWORKS } from './networks.ts';
 import type { ChainReader } from './providers/hypersync.ts';
@@ -25,6 +26,8 @@ export interface OperatorSummary {
   meanValue: number | null;
   confidence: Confidence;
   reasons: string[];
+  /** The funder is the agent's owner or agent wallet, or the owner itself reviewed. Such reviewers are not independent of the agent. */
+  ownerLinked?: boolean;
 }
 
 export interface AgentReputation {
@@ -38,16 +41,21 @@ export interface AgentReputation {
     /** Entries whose value is beyond 1e15 (int128 extremes); left out of every mean. */
     implausibleValues: number;
   };
-  /** Each operator counted once. */
-  independent: { operators: number; linkedOperators: number; meanValue: number | null };
+  /** The agent's owner, wallet and registration (when an identity reader was given). */
+  agent?: AgentProfile;
+  /** Reviewers funded by, or equal to, the agent's owner. Present when the owner is known. */
+  ownerLinked?: { operators: number; clients: number; share: number };
+  /** Each operator counted once. `unrelatedToOwner` leaves out operators the agent's owner funded. */
+  independent: { operators: number; linkedOperators: number; meanValue: number | null; unrelatedToOwner?: number };
   /** Set when only some clients were traced: shares and counts then describe the sample. */
   sampled?: { analyzed: number; total: number };
   /** Share of all clients that belong to the single largest operator. */
   largestOperatorShare: number;
   operators: OperatorSummary[];
   /**
-   * One representative client per operator. Pass it as `clientAddresses` to the registry's
-   * `getSummary(agentId, clientAddresses, tag1, tag2)` for a Sybil-filtered summary.
+   * One representative client per operator, leaving out operators the agent's owner funded. Pass it as
+   * `clientAddresses` to the registry's `getSummary(agentId, clientAddresses, tag1, tag2)` for a Sybil-filtered
+   * summary. It can be empty when every reviewer is owner-linked.
    */
   clientAllowlist: Address[];
   /** Clients with no inbound native transfer we could see (funded through a contract, or too old). Counted as independent. */
@@ -64,6 +72,10 @@ export interface ReputationOptions {
   config?: ScoringConfig;
   /** Reputation registry override (defaults to the Monad deployment). */
   reputation?: Address;
+  /** Reads the agent's owner and registration from the Identity registry; enables the owner-funded check. */
+  identity?: AgentIdentityReader;
+  /** Also fetch the registration file (https or ipfs) for the agent's name. Off by default. */
+  fetchMetadata?: boolean;
   /** Trace at most this many clients (evenly spread through the feedback history). Default: all of them. */
   maxClients?: number;
   onProgress?: (msg: string) => void;
@@ -82,6 +94,7 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
   const id = BigInt(agentId);
   const cfg = o.config ?? nativeConfig(o.knownHubs);
   const log = o.onProgress ?? (() => {});
+  const profileP: Promise<AgentProfile | undefined> = o.identity ? readAgentProfile(o.identity, id, { fetchMetadata: o.fetchMetadata }).catch(() => undefined) : Promise.resolve(undefined);
 
   const feedback = await fetchAgentFeedback(o.chain, o.reputation ?? net.erc8004.reputation, id);
   const allByClient = new Map<Address, Feedback[]>();
@@ -92,7 +105,8 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
   const rawMean = mean(plausible(feedback));
   const implausibleValues = feedback.filter((f) => f.implausible).length;
   if (allClients.length === 0) {
-    return { agentId: id.toString(), network: o.network, raw: { feedbackCount: 0, distinctClients: 0, meanValue: null, implausibleValues: 0 }, independent: { operators: 0, linkedOperators: 0, meanValue: null }, largestOperatorShare: 0, operators: [], clientAllowlist: [], unattributed: 0, hypersyncQueries: o.chain.calls };
+    const emptyAgent = await profileP;
+    return { agentId: id.toString(), network: o.network, ...(emptyAgent ? { agent: emptyAgent } : {}), raw: { feedbackCount: 0, distinctClients: 0, meanValue: null, implausibleValues: 0 }, independent: { operators: 0, linkedOperators: 0, meanValue: null }, largestOperatorShare: 0, operators: [], clientAllowlist: [], unattributed: 0, hypersyncQueries: o.chain.calls };
   }
 
   // Optionally trace only a deterministic, evenly spread sample of the clients.
@@ -122,7 +136,9 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
 
   // 2. For funders that seeded enough clients to matter: what else they sent (hub rule, identical instalments).
   const operators: OperatorSummary[] = [];
-  const clientAllowlist: Address[] = [];
+  const reps = new Map<string, Address>(); // operator id -> one reviewer to put on the allowlist
+  const memberLists = new Map<string, Address[]>();
+  const add = (op: OperatorSummary, members: Address[], rep: Address) => (operators.push(op), reps.set(op.id, rep), memberLists.set(op.id, members));
   const summarize = (members: Address[], extra: Pick<OperatorSummary, 'id' | 'kind' | 'funder' | 'confidence' | 'reasons'>): OperatorSummary => {
     const entries = members.flatMap((m) => byClient.get(m)!);
     return { ...extra, clients: members.length, feedbackCount: entries.length, meanValue: mean(plausible(entries)) };
@@ -131,8 +147,7 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
   for (const [funder, members] of groups) {
     if (members.length < cfg.minGroupSize) {
       for (const m of members) {
-        operators.push(summarize([m], { id: `wallet:${m}`, kind: 'independent', funder, confidence: 'medium', reasons: [`First MON funder seeded only ${members.length} feedback client${members.length === 1 ? '' : 's'} of this agent`] }));
-        clientAllowlist.push(m);
+        add(summarize([m], { id: `wallet:${m}`, kind: 'independent', funder, confidence: 'medium', reasons: [`First MON funder seeded only ${members.length} feedback client${members.length === 1 ? '' : 's'} of this agent`] }), [m], m);
       }
       continue;
     }
@@ -154,20 +169,33 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
     };
     const d = decide(input, ZERO_SALT, cfg);
     if (d.tier === Tier.Linked) {
-      operators.push(summarize(members, { id: `funder:${funder}`, kind: 'linked', funder, confidence: d.confidence, reasons: d.reasons }));
-      clientAllowlist.push(members[0]!);
+      add(summarize(members, { id: `funder:${funder}`, kind: 'linked', funder, confidence: d.confidence, reasons: d.reasons }), members, members[0]!);
     } else {
       // Not enough evidence to merge them: each client stands alone, and we say why.
       for (const m of members) {
-        operators.push(summarize([m], { id: `wallet:${m}`, kind: 'independent', funder, confidence: d.confidence, reasons: d.reasons }));
-        clientAllowlist.push(m);
+        add(summarize([m], { id: `wallet:${m}`, kind: 'independent', funder, confidence: d.confidence, reasons: d.reasons }), [m], m);
       }
     }
   }
   for (const m of unattributed) {
-    operators.push(summarize([m], { id: `wallet:${m}`, kind: 'unattributed', funder: null, confidence: 'low', reasons: ['No inbound MON transfer found for this client'] }));
-    clientAllowlist.push(m);
+    add(summarize([m], { id: `wallet:${m}`, kind: 'unattributed', funder: null, confidence: 'low', reasons: ['No inbound MON transfer found for this client'] }), [m], m);
   }
+
+  // 3. Did the agent's own owner fund these reviewers? Those are not independent of the agent, whoever else they resemble.
+  const agent = await profileP;
+  const ownerAddrs = new Set([agent?.owner, agent?.agentWallet].filter((a): a is Address => !!a).map(lc));
+  if (ownerAddrs.size > 0) {
+    for (const op of operators) {
+      const fundedByOwner = !!op.funder && ownerAddrs.has(lc(op.funder));
+      const ownerReviewed = memberLists.get(op.id)!.some((m) => ownerAddrs.has(lc(m)));
+      if (!fundedByOwner && !ownerReviewed) continue;
+      op.ownerLinked = true;
+      if (fundedByOwner) op.reasons = [...op.reasons, `The funder is this agent's own owner (${agent?.owner})`];
+      if (ownerReviewed) op.reasons = [...op.reasons, "The agent's own owner reviewed it"];
+    }
+  }
+  const ownerOps = operators.filter((op) => op.ownerLinked);
+  const clientAllowlist = operators.filter((op) => !op.ownerLinked).map((op) => reps.get(op.id)!);
 
   operators.sort((a, b) => b.clients - a.clients || a.id.localeCompare(b.id));
   const opMeans = operators.map((op) => op.meanValue).filter((v): v is number => v !== null);
@@ -175,7 +203,9 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
     agentId: id.toString(),
     network: o.network,
     raw: { feedbackCount: feedback.length, distinctClients: allClients.length, meanValue: rawMean, implausibleValues },
-    independent: { operators: operators.length, linkedOperators: operators.filter((op) => op.kind === 'linked').length, meanValue: mean(opMeans) },
+    ...(agent ? { agent } : {}),
+    ...(ownerAddrs.size > 0 ? { ownerLinked: { operators: ownerOps.length, clients: ownerOps.reduce((n, op) => n + op.clients, 0), share: ownerOps.reduce((n, op) => n + op.clients, 0) / clients.length } } : {}),
+    independent: { operators: operators.length, linkedOperators: operators.filter((op) => op.kind === 'linked').length, meanValue: mean(opMeans), ...(ownerAddrs.size > 0 ? { unrelatedToOwner: operators.length - ownerOps.length } : {}) },
     ...(sampled ? { sampled } : {}),
     largestOperatorShare: operators[0] ? operators[0].clients / clients.length : 0,
     operators,

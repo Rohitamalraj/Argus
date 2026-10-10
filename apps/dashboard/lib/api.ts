@@ -41,11 +41,13 @@ export interface AgentReputation {
   network: Network;
   cached?: boolean;
   raw: { feedbackCount: number; distinctClients: number; meanValue: number | null; implausibleValues: number };
-  independent: { operators: number; linkedOperators: number; meanValue: number | null };
+  independent: { operators: number; linkedOperators: number; meanValue: number | null; unrelatedToOwner?: number };
+  agent?: { owner: string | null; agentWallet: string | null; uri: string | null; name?: string; description?: string };
+  ownerLinked?: { operators: number; clients: number; share: number };
   sampled?: { analyzed: number; total: number };
   largestOperatorShare: number;
   unattributed: number;
-  topOperators: { id: string; kind: 'linked' | 'independent' | 'unattributed'; funder: string | null; clients: number; feedbackCount: number; meanValue: number | null; confidence: string; reasons: string[] }[];
+  topOperators: { id: string; kind: 'linked' | 'independent' | 'unattributed'; ownerLinked?: boolean; funder: string | null; clients: number; feedbackCount: number; meanValue: number | null; confidence: string; reasons: string[] }[];
   clientAllowlistSize: number;
   hypersyncQueries: number;
 }

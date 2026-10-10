@@ -3,6 +3,7 @@ import { NETWORKS, type Network, type NetworkInfo } from './networks.ts';
 import { ChainDataProvider } from './providers/chain.ts';
 import { HyperSyncClient, type ChainReader } from './providers/hypersync.ts';
 import { RegistryReader, type OnchainVerdict } from './registry.ts';
+import { identityReader, type AgentIdentityReader } from './identity.ts';
 import { agentReputation, type AgentReputation } from './reputation.ts';
 
 const ZERO_SALT: Hex = `0x${'00'.repeat(32)}`;
@@ -18,6 +19,8 @@ export interface ArgusOptions {
   /** Extra funders that never link wallets (exchanges, faucets). */
   knownHubs?: Iterable<string>;
   registry?: Address;
+  /** Where to read an ERC-8004 agent's owner and registration. Default: the Identity registry over RPC. */
+  identity?: AgentIdentityReader;
 }
 
 export interface VerifyResult {
@@ -42,7 +45,7 @@ export interface Argus {
   /** Recompute locally and compare with the published verdict: verify, don't trust. */
   verify(wallet: Address, attestor?: Address): Promise<VerifyResult>;
   /** ERC-8004 reputation for an agent, deduplicated by operator. */
-  agentReputation(agentId: bigint | number | string, opts?: { maxClients?: number; onProgress?: (msg: string) => void }): Promise<AgentReputation>;
+  agentReputation(agentId: bigint | number | string, opts?: { maxClients?: number; fetchMetadata?: boolean; onProgress?: (msg: string) => void }): Promise<AgentReputation>;
 }
 
 export function createArgus(o: ArgusOptions): Argus {
@@ -82,6 +85,9 @@ export function createArgus(o: ArgusOptions): Argus {
         chain: hs ?? hyper(),
         network: o.network,
         knownHubs: o.knownHubs,
+        identity: o.identity ?? identityReader(o.network, { rpcUrl: o.rpcUrl }),
+        // Reading the agent's registration file is a fetch of a link the agent chose; fine on your own machine.
+        fetchMetadata: opts.fetchMetadata ?? true,
         ...(opts.maxClients ? { maxClients: opts.maxClients } : {}),
         ...(opts.onProgress ? { onProgress: opts.onProgress } : {}),
       }),

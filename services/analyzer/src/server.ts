@@ -4,7 +4,7 @@ import { createApi } from './api.ts';
 import { Assessor, type WalletIntel } from './assessor.ts';
 import { ROOT, attestorKey, env, sellerAddresses } from './env.ts';
 import { NETWORKS, type Network } from './networks.ts';
-import { ChainDataProvider, HyperSyncClient, agentReputation } from '@argus/sdk';
+import { ChainDataProvider, HyperSyncClient, agentReputation, identityReader } from '@argus/sdk';
 import { AgentReputationService } from './agents.ts';
 import { Budget } from './budget.ts';
 import { NansenProvider } from './providers/nansen.ts';
@@ -70,6 +70,6 @@ for (const n of networks) {
 
 const sim = new SimRunner({ root: ROOT, sellerUrl: process.env.SIM_SELLER_URL ?? 'http://localhost:4021' });
 const agents = new AgentReputationService((net, id, sample) =>
-  agentReputation(id, { chain: new HyperSyncClient(NETWORKS[net].hypersync, NETWORKS[net].usdc, env.envioToken, 0), network: net === 'mainnet' ? 'mainnet' : 'testnet', maxClients: sample }),
+  agentReputation(id, { chain: new HyperSyncClient(NETWORKS[net].hypersync, NETWORKS[net].usdc, env.envioToken, 0), network: net === 'mainnet' ? 'mainnet' : 'testnet', maxClients: sample, identity: identityReader(net === 'mainnet' ? 'mainnet' : 'testnet') }),
 );
 createApi({ store, assessor, sim, agents }).listen(env.port, () => console.log(`Argus analyzer on http://localhost:${env.port}`));

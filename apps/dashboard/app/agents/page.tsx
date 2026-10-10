@@ -151,6 +151,7 @@ export default function Agents() {
                   ? `One operator holds ${(r.largestOperatorShare * 100).toFixed(0)}% of ${r.sampled ? 'the sampled ' : ''}reviewers. `
                   : 'No reviewers share a funder strongly enough to link. '}
                 Mean feedback value: {r.raw.meanValue?.toFixed(1) ?? 'n/a'} raw, {r.independent.meanValue?.toFixed(1) ?? 'n/a'} counting each operator once.
+                {r.ownerLinked && r.ownerLinked.clients > 0 && ` ${(r.ownerLinked.share * 100).toFixed(0)}% of the traced reviewers were funded by the agent's own owner (${short(r.agent?.owner ?? '')}), so they are self-dealing, not independent; ${n(r.independent.unrelatedToOwner ?? 0)} operator${r.independent.unrelatedToOwner === 1 ? ' is' : 's are'} unrelated to the owner.`}
                 {r.raw.implausibleValues > 0 && ` ${n(r.raw.implausibleValues)} entries have absurd values (beyond 1e15) and are left out of both means.`}
               </p>
             </div>
@@ -169,6 +170,12 @@ export default function Agents() {
                           <span className="chip-dot" />
                           {op.kind === 'linked' ? 'Linked fleet' : op.kind === 'independent' ? 'Independent' : 'Unattributed'}
                         </span>
+                        {op.ownerLinked && (
+                          <span className="chip linked">
+                            <span className="chip-dot" />
+                            Owner-funded
+                          </span>
+                        )}
                         <span className="mono small">{op.funder ? `funder ${short(op.funder)}` : short(op.id.replace('wallet:', ''))}</span>
                         <span className="mono small muted">
                           {n(op.clients)} reviewer{op.clients === 1 ? '' : 's'} · {n(op.feedbackCount)} feedback · {op.confidence}
