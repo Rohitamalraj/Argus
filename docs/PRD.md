@@ -1,5 +1,15 @@
 # Argus PRD v2.0 (final)
 
+> **Historical design record (v2.0, 8 Oct 2026).** This is the plan the build started from. The project has since been repositioned as a primitive other builders and agents call, and several parts below are out of date:
+>
+> - Argus now ships as four npm packages (`argus-x402-scoring`, `-sdk`, `-middleware`, `-mcp`), an MCP server for agents, an x402 middleware, a registry contract and an optional analyzer. The dashboard is a demo of these, not the product.
+> - ERC-8004 reputation analysis (reviewers grouped by operator, owner self-dealing flagged) is part of the product; this PRD predates it.
+> - Verdicts can be recomputed locally from public chain data, with no Argus server (`localResolver`).
+> - The signal set gained S5 (context concentration), and the Verified tier and investigator flow described here are not built.
+>
+> Current sources of truth: [README](../README.md), [ARCHITECTURE](ARCHITECTURE.md), [ERC8004](ERC8004.md), [INTEGRATE](INTEGRATE.md), [EVAL](EVAL.md).
+
+
 Oct 8, 2026 · @Rohit
 
 ## Summary
