@@ -21,6 +21,7 @@ interface RawTx {
   to: string | null;
   value?: string | null;
   status?: number | string | null;
+  contract_address?: string | null;
 }
 interface RawResponse {
   data: Array<{ logs?: RawLog[]; transactions?: RawTx[]; blocks?: Array<{ number: number; timestamp: string }> }>;
@@ -49,6 +50,8 @@ export interface ChainReader {
   nativeTransfers(selections: { from?: Address[]; to?: Address[] }[], maxTransfers?: number): Promise<Transfer[]>;
   /** Event logs of one contract whose topics match (each position is an OR list; omit a position for any). */
   rawLogs(address: Address, topics: Hex[][], startBlock?: number): Promise<ChainLog[]>;
+  /** Who created each contract, when it was created by a plain transaction (not through a factory). Optional. */
+  contractCreators?(addresses: Address[]): Promise<Map<Address, { creator: Address; timestamp: number }>>;
 }
 
 export interface TransferQuery {
@@ -97,6 +100,31 @@ export class HyperSyncClient implements ChainReader {
         }
       }
       if (maxTransfers && out.length >= maxTransfers) break;
+      if (res.next_block > res.archive_height || res.next_block <= fromBlock) break;
+      fromBlock = res.next_block;
+    }
+    return out;
+  }
+
+  /** The deploying account of each contract created by a direct deployment transaction. Factory-made contracts are not found. */
+  async contractCreators(addresses: Address[]): Promise<Map<Address, { creator: Address; timestamp: number }>> {
+    const out = new Map<Address, { creator: Address; timestamp: number }>();
+    if (addresses.length === 0) return out;
+    let fromBlock = 0;
+    for (;;) {
+      const res = await this.query({
+        from_block: fromBlock,
+        transactions: [{ contract_address: addresses }],
+        field_selection: { transaction: ['block_number', 'from', 'contract_address', 'status'], block: ['number', 'timestamp'] },
+      });
+      const ts = new Map<number, number>();
+      for (const page of res.data) for (const b of page.blocks ?? []) ts.set(b.number, Number(BigInt(b.timestamp)));
+      for (const page of res.data) {
+        for (const t of page.transactions ?? []) {
+          if (!t.from || !t.contract_address) continue;
+          out.set(t.contract_address.toLowerCase() as Address, { creator: t.from.toLowerCase() as Address, timestamp: ts.get(t.block_number) ?? 0 });
+        }
+      }
       if (res.next_block > res.archive_height || res.next_block <= fromBlock) break;
       fromBlock = res.next_block;
     }

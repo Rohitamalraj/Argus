@@ -177,9 +177,34 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
       }
     }
   }
+  // 2b. Clients with no inbound MON are often contracts. Their operator is whoever deployed them.
+  const creators = new Map<Address, { creator: Address; timestamp: number }>();
+  if (unattributed.length > 0 && o.chain.contractCreators) {
+    for (const part of chunks(unattributed, CHUNK)) for (const [k, v] of await o.chain.contractCreators(part)) creators.set(k, v);
+    if (creators.size) log(`${creators.size} unattributed clients are contracts with a known deployer`);
+  }
+  const byDeployer = new Map<Address, Address[]>();
+  const noCreator: Address[] = [];
   for (const m of unattributed) {
+    const c = creators.get(m);
+    if (!c) noCreator.push(m);
+    else byDeployer.set(c.creator, [...(byDeployer.get(c.creator) ?? []), m]);
+  }
+  let deployed = 0;
+  for (const [deployer, members] of byDeployer) {
+    deployed += members.length;
+    if (members.length >= cfg.minGroupSize) {
+      add(summarize(members, { id: `deployer:${deployer}`, kind: 'linked', funder: deployer, confidence: 'high', reasons: [`${members.length} reviewers are contracts deployed by the same account`, `The deployer ${deployer} is one operator behind them`] }), members, members[0]!);
+    } else {
+      for (const m of members) {
+        add(summarize([m], { id: `wallet:${m}`, kind: 'independent', funder: deployer, confidence: 'medium', reasons: [`A contract; its deployer created only ${members.length} reviewer contract${members.length === 1 ? '' : 's'} of this agent`] }), [m], m);
+      }
+    }
+  }
+  for (const m of noCreator) {
     add(summarize([m], { id: `wallet:${m}`, kind: 'unattributed', funder: null, confidence: 'low', reasons: ['No inbound MON transfer found for this client'] }), [m], m);
   }
+  const stillUnattributed = noCreator.length;
 
   // 3. Did the agent's own owner fund these reviewers? Those are not independent of the agent, whoever else they resemble.
   const agent = await profileP;
@@ -190,7 +215,7 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
       const ownerReviewed = memberLists.get(op.id)!.some((m) => ownerAddrs.has(lc(m)));
       if (!fundedByOwner && !ownerReviewed) continue;
       op.ownerLinked = true;
-      if (fundedByOwner) op.reasons = [...op.reasons, `The funder is this agent's own owner (${agent?.owner})`];
+      if (fundedByOwner) op.reasons = [...op.reasons, `The ${op.id.startsWith('deployer:') ? 'deployer' : 'funder'} is this agent's own owner (${agent?.owner})`];
       if (ownerReviewed) op.reasons = [...op.reasons, "The agent's own owner reviewed it"];
     }
   }
@@ -210,7 +235,7 @@ export async function agentReputation(agentId: bigint | number | string, o: Repu
     largestOperatorShare: operators[0] ? operators[0].clients / clients.length : 0,
     operators,
     clientAllowlist,
-    unattributed: unattributed.length,
+    unattributed: stillUnattributed,
     hypersyncQueries: o.chain.calls,
   };
 }

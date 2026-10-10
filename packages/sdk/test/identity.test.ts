@@ -14,7 +14,12 @@ class FakeChain implements ChainReader {
   calls = 0;
   transfers: Transfer[] = [];
   logs: ChainLog[] = [];
+  creators = new Map<Address, Address>();
   private seq = 0;
+  async contractCreators(addresses: Address[]) {
+    this.calls++;
+    return new Map(addresses.filter((a) => this.creators.has(a)).map((a) => [a, { creator: this.creators.get(a)!, timestamp: T0 }]));
+  }
   fund(from: Address, to: Address, ts: number, amount = 11n * MON) {
     this.transfers.push({ from, to, amount, timestamp: ts, txHash: `0x${(++this.seq).toString(16).padStart(64, '0')}` });
   }
@@ -166,5 +171,46 @@ describe('native-MON hubs', () => {
     const r = await agentReputation(AGENT, { chain: scenario(hub), network: 'mainnet', knownHubs: [hub] });
     expect(r.independent.linkedOperators).toBe(0);
     expect(r.operators.every((o) => o.kind !== 'linked')).toBe(true);
+  });
+});
+
+describe('contract reviewers', () => {
+  const contracts = (n: number, deployer: Address, from = 0x3000) => {
+    const chain = new FakeChain();
+    for (let i = 0; i < n; i++) {
+      chain.creators.set(addr(from + i), deployer);
+      chain.feedback(addr(from + i), T0 + i);
+    }
+    return chain;
+  };
+
+  it('contracts deployed by one account are one operator', async () => {
+    const r = await agentReputation(AGENT, { chain: contracts(5, addr(0xdead)), network: 'mainnet' });
+    expect(r.operators).toHaveLength(1);
+    expect(r.operators[0]).toMatchObject({ kind: 'linked', clients: 5, funder: addr(0xdead) });
+    expect(r.operators[0]!.reasons.join(' ')).toMatch(/deployed by the same account/);
+    expect(r.unattributed).toBe(0);
+  });
+
+  it('a deployer of only one or two reviewer contracts does not merge them', async () => {
+    const r = await agentReputation(AGENT, { chain: contracts(2, addr(0xdead)), network: 'mainnet' });
+    expect(r.operators.every((o) => o.kind === 'independent')).toBe(true);
+    expect(r.independent.operators).toBe(2);
+  });
+
+  it('contracts with no visible deployer stay unattributed; a chain without the lookup still works', async () => {
+    const chain = new FakeChain();
+    for (let i = 0; i < 3; i++) chain.feedback(addr(0x4000 + i), T0);
+    expect((await agentReputation(AGENT, { chain, network: 'mainnet' })).unattributed).toBe(3);
+    const noLookup = new FakeChain();
+    (noLookup as { contractCreators?: unknown }).contractCreators = undefined;
+    for (let i = 0; i < 3; i++) noLookup.feedback(addr(0x4000 + i), T0);
+    expect((await agentReputation(AGENT, { chain: noLookup, network: 'mainnet' })).unattributed).toBe(3);
+  });
+
+  it('a deployer that is the agent owner marks them owner-linked', async () => {
+    const r = await agentReputation(AGENT, { chain: contracts(4, OWNER), network: 'mainnet', identity: identity(OWNER) });
+    expect(r.operators[0]!.ownerLinked).toBe(true);
+    expect(r.operators[0]!.reasons.join(' ')).toMatch(/deployer is this agent's own owner/);
   });
 });
