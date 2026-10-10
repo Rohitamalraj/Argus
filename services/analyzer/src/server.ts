@@ -10,7 +10,9 @@ import { Budget } from './budget.ts';
 import { NansenProvider } from './providers/nansen.ts';
 import { Publisher } from './publisher.ts';
 import { SimRunner } from './sim.ts';
-import { LocalKeySigner } from './signer.ts';
+import { LocalKeySigner, type Signer } from './signer.ts';
+import { DynamicSigner, dynamicEvmClient } from './dynamic-signer.ts';
+import { loadDynamicWallet } from './dynamic-config.ts';
 import { Store } from './store.ts';
 
 if (!env.envioToken) throw new Error('ENVIO_API_TOKEN missing');
@@ -52,10 +54,15 @@ console.log(nansen ? `[nansen] deep check on for mainnet (${env.nansenApiKey ? '
 
 const assessor = new Assessor({ store, salt: env.salt, providers, configs, ...(nansen ? { deep: nansen } : {}) });
 
+// The attestor can be a Dynamic MPC wallet instead of a raw key: DYNAMIC_ATTESTOR_NETWORK=testnet|mainnet.
+const dynamicWallet = process.env.DYNAMIC_ATTESTOR_NETWORK ? loadDynamicWallet(ROOT) : undefined;
+const dynamicClient = dynamicWallet && process.env.DYNAMIC_ENVIRONMENT_ID && process.env.DYNAMIC_API_TOKEN ? await dynamicEvmClient(process.env.DYNAMIC_ENVIRONMENT_ID, process.env.DYNAMIC_API_TOKEN) : undefined;
+
 for (const n of networks) {
+  const viaDynamic = dynamicWallet && dynamicClient && process.env.DYNAMIC_ATTESTOR_NETWORK === n;
   const key = attestorKey(n);
   const registry = NETWORKS[n].registry;
-  if (!key || !registry) {
+  if ((!key && !viaDynamic) || !registry) {
     console.log(`[publish ${n}] off (no attestor key or registry)`);
     continue;
   }
@@ -63,9 +70,9 @@ for (const n of networks) {
     console.log('[publish mainnet] off (set PUBLISH_MAINNET=true to spend MON on attestations)');
     continue;
   }
-  const signer = new LocalKeySigner(n, key);
+  const signer: Signer = viaDynamic ? new DynamicSigner(n, dynamicClient!, dynamicWallet!, process.env.DYNAMIC_WALLET_PASSWORD) : new LocalKeySigner(n, key!);
   new Publisher(n, store, signer, registry).start();
-  console.log(`[publish ${n}] on, attestor ${signer.address}, registry ${registry}`);
+  console.log(`[publish ${n}] on, attestor ${signer.address}${viaDynamic ? ' (Dynamic MPC wallet, no raw key)' : ''}, registry ${registry}`);
 }
 
 const sim = new SimRunner({ root: ROOT, sellerUrl: process.env.SIM_SELLER_URL ?? 'http://localhost:4021' });

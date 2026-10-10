@@ -12,11 +12,14 @@
     "nansen-x402": "tsx src/cli/nansen-x402.ts",
     "dev": "tsx src/server.ts",
     "start": "tsx src/server.ts",
-    "assess-deep": "tsx src/cli/assess-deep.ts"
+    "assess-deep": "tsx src/cli/assess-deep.ts",
+    "dynamic:create": "tsx src/dynamic-wallet-cli.ts"
   },
   "dependencies": {
     "@argus/scoring": "*",
     "@argus/sdk": "*",
+    "@dynamic-labs-wallet/core": "^1.1.34",
+    "@dynamic-labs-wallet/node-evm": "^1.1.34",
     "@x402/evm": "^2.28.0",
     "@x402/fetch": "^2.28.0",
     "dotenv": "^16.4.7",

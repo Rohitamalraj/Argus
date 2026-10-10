@@ -53,3 +53,18 @@ In Envio Cloud, open the indexer, **Deploy** the latest commit of `main` (deploy
 - [ ] Envio endpoint promoted; the dashboard's "On-chain activity" panel shows payments
 - [ ] Testnet demo wallets still hold USDC (`npm run status -w @argus/farm-sim -- --network testnet`); the simulation tops them up from the seller after each run
 - [ ] Secrets scan: `git grep -nE "nsn_|dyn_|privateKey"` finds nothing
+
+## Attestor key in Dynamic (no raw key on the host)
+
+The analyzer can sign attestations through a Dynamic MPC server wallet instead of a private key.
+
+```bash
+# once, on Linux/macOS/WSL (Dynamic's native MPC library has no Windows build): create the wallet
+DYNAMIC_ENVIRONMENT_ID=... DYNAMIC_API_TOKEN=... DYNAMIC_WALLET_PASSWORD=<random> npm run dynamic:create -w @argus/analyzer
+# fund the printed address with a little MON, then run the analyzer on Linux with:
+DYNAMIC_ATTESTOR_NETWORK=testnet DYNAMIC_WALLET_PASSWORD=<same> npm start -w @argus/analyzer
+```
+
+`data/dynamic-attestor.json` holds only public wallet metadata; the key shares stay with Dynamic. Verified live on Monad testnet: a verdict published through the registry was signed by the Dynamic wallet (tx `0x7eeb2d70…bb19`). The Docker image runs on Linux, so it can use this as is. On Node under WSL, set `NODE_OPTIONS=--dns-result-order=ipv4first` if RPC fetches time out.
+
+A different attestor address is a different trust anchor: the SDK's `defaultAttestor` stays the existing key until you choose to switch it.
