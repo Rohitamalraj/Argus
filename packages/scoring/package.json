@@ -1,6 +1,6 @@
 {
   "name": "@argus/scoring",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Argus signals, hub rule and decision rule. Pure functions over chain evidence; no provider code.",
   "license": "MIT",
   "type": "module",

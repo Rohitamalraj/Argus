@@ -1,6 +1,6 @@
 {
   "name": "@argus/middleware",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Argus x402 middleware for Express, Hono and Next.js: per-payer promo pricing with one promo per operator.",
   "license": "MIT",
   "type": "module",

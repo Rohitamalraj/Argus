@@ -24,7 +24,7 @@ const fail = (message: string) => ({ isError: true, content: [{ type: 'text' as 
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
 export function createServer(argusFor: ArgusFactory, opts: { defaultSample?: number } = {}): McpServer {
-  const server = new McpServer({ name: 'argus', version: '0.1.0' }, { instructions: INSTRUCTIONS });
+  const server = new McpServer({ name: 'argus', version: '0.1.2' }, { instructions: INSTRUCTIONS });
   const readOnly = { readOnlyHint: true, idempotentHint: true, openWorldHint: true } as const;
   const guard = async <T>(fn: () => Promise<T>) => {
     try {

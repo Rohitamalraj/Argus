@@ -1,6 +1,6 @@
 {
   "name": "@argus/mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Argus MCP server: lets AI agents check whether wallets are independent operators and how much ERC-8004 reputation is real.",
   "license": "MIT",
   "type": "module",
