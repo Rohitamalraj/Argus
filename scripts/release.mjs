@@ -23,7 +23,7 @@ const NAMES = {
 const PACKAGES = [
   { dir: 'packages/scoring', lib: ['src/index.ts'], bin: {}, keywords: ['sybil', 'x402', 'monad', 'erc-8004', 'attestation'] },
   { dir: 'packages/sdk', lib: ['src/index.ts'], bin: { 'argus-x402': 'src/cli.ts' }, keywords: ['sybil', 'x402', 'monad', 'erc-8004', 'reputation', 'agents'] },
-  { dir: 'packages/middleware', lib: ['src/index.ts'], bin: {}, keywords: ['x402', 'express', 'promo', 'sybil', 'monad'] },
+  { dir: 'packages/middleware', lib: ['src/index.ts', 'src/hono.ts', 'src/next.ts'], bin: {}, keywords: ['x402', 'express', 'hono', 'nextjs', 'promo', 'sybil', 'monad'] },
   { dir: 'packages/mcp', lib: ['src/server.ts'], bin: { 'argus-x402-mcp': 'src/main.ts' }, keywords: ['mcp', 'model-context-protocol', 'agents', 'erc-8004', 'monad'] },
 ];
 
@@ -87,11 +87,16 @@ for (const p of PACKAGES) {
     type: 'module',
     main,
     types,
-    exports: { '.': { types, import: main } },
+    exports: Object.fromEntries(p.lib.map((entry, i) => {
+      const js = './dist/' + entry.split('/').pop().replace(/.ts$/, '.js');
+      const key = i === 0 ? '.' : './' + entry.split('/').pop().replace(/.ts$/, '');
+      return [key, { types: js.replace(/.js$/, '.d.ts'), import: js }];
+    })),
     ...(Object.keys(p.bin).length ? { bin: Object.fromEntries(Object.entries(p.bin).map(([b, e]) => [b, 'dist/' + e.split('/').pop().replace(/\.ts$/, '.js')])) } : {}),
     files: ['dist', 'README.md', 'LICENSE'],
     dependencies: Object.fromEntries(Object.entries(deps).sort()),
     ...(pkg.peerDependencies ? { peerDependencies: pkg.peerDependencies } : {}),
+    ...(pkg.peerDependenciesMeta ? { peerDependenciesMeta: pkg.peerDependenciesMeta } : {}),
     engines: { node: '>=20.12' },
     repository: { type: 'git', url: 'git+https://github.com/Rohitamalraj/Argus.git', directory: p.dir },
     homepage: 'https://github.com/Rohitamalraj/Argus#readme',
