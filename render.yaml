@@ -15,6 +15,15 @@ services:
         sync: false
       - key: ATTESTOR_SALT
         sync: false
+      # Optional: sign attestations with a Dynamic MPC wallet (docs/DEPLOY.md)
+      - key: DYNAMIC_ENVIRONMENT_ID
+        sync: false
+      - key: DYNAMIC_API_TOKEN
+        sync: false
+      - key: DYNAMIC_WALLET_PASSWORD
+        sync: false
+      - key: DYNAMIC_ATTESTOR_B64
+        sync: false
       - key: PUBLISH_MAINNET
         value: "false"
       - key: NANSEN_DAILY_CAP_USD
