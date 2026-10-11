@@ -22,7 +22,7 @@ Judges need one link, no keys and no funds. Three pieces:
 
 ```bash
 # the demo wallets without the old attestor key (the Dynamic wallet signs instead)
-node -e "const w=JSON.parse(require('fs').readFileSync('wallets.testnet.json','utf8'));w.wallets=w.wallets.filter(x=>x.role!=='attestor');process.stdout.write(Buffer.from(JSON.stringify(w)).toString('base64'))"
+node -e "const w=JSON.parse(require('fs').readFileSync('wallets.testnet.json','utf8'));w.wallets=w.wallets.filter(x=>x.role!=='attestor');process.stdout.write(Buffer.from(JSON.stringify(w)).toString('base64'))" | clip
 ```
 
 Skip the filter if you are not using the Dynamic wallet: the analyzer then signs with the `attestor` key in that file.
@@ -74,7 +74,7 @@ DYNAMIC_ATTESTOR_NETWORK=testnet DYNAMIC_WALLET_PASSWORD=<same> npm start -w @ar
 **On Render.** The Docker image runs on Linux, so the Dynamic library works there. Set the four Dynamic variables on the service:
 
 ```bash
-node -e "process.stdout.write(require('fs').readFileSync('data/dynamic-attestor.json').toString('base64'))"   # DYNAMIC_ATTESTOR_B64
+node -e "process.stdout.write(require('fs').readFileSync('data/dynamic-attestor.json').toString('base64'))" | clip   # copies to the clipboard: paste it into Render with nothing before or after   # DYNAMIC_ATTESTOR_B64
 ```
 
 `DYNAMIC_ENVIRONMENT_ID` and `DYNAMIC_API_TOKEN` come from your `.env`; `DYNAMIC_WALLET_PASSWORD` is the password the wallet was created with. `scripts/start-hosted.mjs` writes the file, switches the analyzer to the Dynamic signer and points the demo seller at the Dynamic wallet's address, so the seller reads the verdicts it signs. Keep a little testnet MON on that wallet (the logs print its address).

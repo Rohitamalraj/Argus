@@ -7,6 +7,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { decodeJsonSecret } from './secret-json.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const port = process.env.PORT ?? '8787';
@@ -14,8 +15,13 @@ const sellerPort = '4021';
 
 const walletsFile = join(root, 'wallets.testnet.json');
 if (!existsSync(walletsFile) && process.env.WALLETS_TESTNET_B64) {
-  writeFileSync(walletsFile, Buffer.from(process.env.WALLETS_TESTNET_B64, 'base64'));
-  console.log('[hosted] wrote wallets.testnet.json from WALLETS_TESTNET_B64');
+  const decoded = decodeJsonSecret('WALLETS_TESTNET_B64', process.env.WALLETS_TESTNET_B64);
+  if (decoded.error) {
+    console.error(`[hosted] ${decoded.error}`);
+    process.exit(1);
+  }
+  writeFileSync(walletsFile, JSON.stringify(decoded.value));
+  console.log(`[hosted] wrote wallets.testnet.json from WALLETS_TESTNET_B64 (${decoded.value.wallets?.length ?? 0} wallets)`);
 }
 if (!existsSync(walletsFile)) console.log('[hosted] no testnet wallets: the judge simulation and verdict publishing will be off');
 
@@ -25,7 +31,9 @@ let dynamicEnv = {};
 const dynamicFile = join(root, 'data', 'dynamic-attestor.json');
 if (process.env.DYNAMIC_ATTESTOR_B64) {
   mkdirSync(dirname(dynamicFile), { recursive: true });
-  writeFileSync(dynamicFile, Buffer.from(process.env.DYNAMIC_ATTESTOR_B64, 'base64'));
+  const decoded = decodeJsonSecret('DYNAMIC_ATTESTOR_B64', process.env.DYNAMIC_ATTESTOR_B64);
+  if (decoded.error) console.error(`[hosted] ${decoded.error} Continuing without the Dynamic wallet.`);
+  else writeFileSync(dynamicFile, JSON.stringify(decoded.value));
 }
 if (existsSync(dynamicFile) && process.env.DYNAMIC_ENVIRONMENT_ID && process.env.DYNAMIC_API_TOKEN && process.env.DYNAMIC_WALLET_PASSWORD) {
   const address = JSON.parse(readFileSync(dynamicFile, 'utf8')).walletMetadata.accountAddress;
