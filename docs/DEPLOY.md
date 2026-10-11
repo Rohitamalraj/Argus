@@ -18,12 +18,16 @@ Judges need one link, no keys and no funds. Three pieces:
 | `NANSEN_API_KEY` | your Nansen key (optional; without it the deep check is off) |
 | `ATTESTOR_SALT` | the `ATTESTOR_SALT` value from your local `.env`, so operator ids stay consistent |
 | `WALLETS_TESTNET_B64` | the testnet demo wallets, base64 (below) |
+| `DYNAMIC_ENVIRONMENT_ID`, `DYNAMIC_API_TOKEN`, `DYNAMIC_WALLET_PASSWORD`, `DYNAMIC_ATTESTOR_B64` | optional: sign attestations with the Dynamic wallet (last section) |
 
 ```bash
-node -e "process.stdout.write(require('fs').readFileSync('wallets.testnet.json').toString('base64'))"
+# the demo wallets without the old attestor key (the Dynamic wallet signs instead)
+node -e "const w=JSON.parse(require('fs').readFileSync('wallets.testnet.json','utf8'));w.wallets=w.wallets.filter(x=>x.role!=='attestor');process.stdout.write(Buffer.from(JSON.stringify(w)).toString('base64'))"
 ```
 
-`WALLETS_TESTNET_B64` holds **testnet keys only** (the 13 demo wallets, the seller and the attestor). Never put mainnet keys on the host: `PUBLISH_MAINNET` stays `false`, so the hosted analyzer never spends mainnet MON.
+Skip the filter if you are not using the Dynamic wallet: the analyzer then signs with the `attestor` key in that file.
+
+`WALLETS_TESTNET_B64` holds **testnet keys only** (the 13 demo wallets and the seller). Never put mainnet keys on the host: `PUBLISH_MAINNET` stays `false`, so the hosted analyzer never spends mainnet MON.
 
 When it is live, `https://<service>.onrender.com/health` returns `{"ok":true}` and `POST /v1/sim/run` runs the 13-wallet simulation (about a minute).
 
@@ -65,6 +69,16 @@ DYNAMIC_ENVIRONMENT_ID=... DYNAMIC_API_TOKEN=... DYNAMIC_WALLET_PASSWORD=<random
 DYNAMIC_ATTESTOR_NETWORK=testnet DYNAMIC_WALLET_PASSWORD=<same> npm start -w @argus/analyzer
 ```
 
-`data/dynamic-attestor.json` holds only public wallet metadata; the key shares stay with Dynamic. Verified live on Monad testnet: a verdict published through the registry was signed by the Dynamic wallet (tx `0x7eeb2d70…bb19`). The Docker image runs on Linux, so it can use this as is. On Node under WSL, set `NODE_OPTIONS=--dns-result-order=ipv4first` if RPC fetches time out.
+`data/dynamic-attestor.json` holds only public wallet metadata; the key shares stay with Dynamic. Verified live on Monad testnet: a verdict published through the registry was signed by the Dynamic wallet (tx `0x7eeb2d70…bb19`).
+
+**On Render.** The Docker image runs on Linux, so the Dynamic library works there. Set the four Dynamic variables on the service:
+
+```bash
+node -e "process.stdout.write(require('fs').readFileSync('data/dynamic-attestor.json').toString('base64'))"   # DYNAMIC_ATTESTOR_B64
+```
+
+`DYNAMIC_ENVIRONMENT_ID` and `DYNAMIC_API_TOKEN` come from your `.env`; `DYNAMIC_WALLET_PASSWORD` is the password the wallet was created with. `scripts/start-hosted.mjs` writes the file, switches the analyzer to the Dynamic signer and points the demo seller at the Dynamic wallet's address, so the seller reads the verdicts it signs. Keep a little testnet MON on that wallet (the logs print its address).
+
+**Rehearsed.** The hosted process (the Dockerfile's install steps, Render-style environment variables, Linux) started, answered `/health`, ran the simulation (13 wallets → 4 customers), and published the 13 verdicts on Monad testnet signed by the Dynamic wallet (tx `0xe8cd3f2a…4aa0`). A Docker image build and a Render deploy have not been run. On Node under WSL, set `NODE_OPTIONS=--dns-result-order=ipv4first` if RPC fetches time out.
 
 A different attestor address is a different trust anchor: the SDK's `defaultAttestor` stays the existing key until you choose to switch it.
