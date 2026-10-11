@@ -56,13 +56,31 @@ const start = (name, args, env) => {
   children.push(c);
 };
 
-start('seller', ['apps/seller-demo/src/server.ts'], {
-  NETWORK: 'testnet',
-  PORT: sellerPort,
-  SELLER_NAME: 'seller-a',
-  ANALYZER_URL: `http://localhost:${port}`,
-  ...dynamicEnv,
-});
+// Start the analyzer first and the seller only once the analyzer answers. The analyzer owns the public port;
+// a host that scans for open ports (Render) must not find the internal seller port first.
 start('analyzer', ['services/analyzer/src/server.ts'], { PORT: port, SIM_SELLER_URL: `http://localhost:${sellerPort}`, ...dynamicEnv });
+
+const waitForAnalyzer = async () => {
+  for (let i = 0; i < 120; i++) {
+    try {
+      if ((await fetch(`http://localhost:${port}/health`)).ok) return true;
+    } catch {}
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return false;
+};
+if (await waitForAnalyzer()) {
+  start('seller', ['apps/seller-demo/src/server.ts'], {
+    NETWORK: 'testnet',
+    PORT: sellerPort,
+    SELLER_NAME: 'seller-a',
+    ANALYZER_URL: `http://localhost:${port}`,
+    ...dynamicEnv,
+  });
+} else {
+  console.error('[hosted] the analyzer did not answer within 120 s; stopping');
+  for (const c of children) c.kill();
+  process.exit(1);
+}
 
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => children.forEach((c) => c.kill()));
