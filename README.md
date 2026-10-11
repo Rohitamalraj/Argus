@@ -91,6 +91,19 @@ Argus is the complement of identity credentials, not a replacement: it does not 
 
 ---
 
+## Live Demo
+
+| | |
+|---|---|
+| **Website** | <https://argus-mu-one.vercel.app> |
+| **Agents page** | <https://argus-mu-one.vercel.app/agents?agent=182&network=mainnet> — 7,665 reviewers collapse to 1 operator |
+| **Dashboard** | <https://argus-mu-one.vercel.app/dashboard> — press *Run simulation*: 13 wallets make real x402 payments on Monad testnet and resolve to 4 customers (about 30 s) |
+| **Analyzer API** | <https://argus-analyzer.onrender.com/health> (free host: the first request after idle takes about a minute) |
+
+No wallet, keys or funds are needed to try it. Testnet verdicts shown on the dashboard are published on-chain by a **Dynamic MPC wallet**.
+
+---
+
 ## Technical Architecture
 
 ### System Overview

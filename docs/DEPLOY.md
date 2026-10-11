@@ -46,6 +46,16 @@ Import the repo and set **Root Directory** to `apps/dashboard`. Environment vari
 
 In Envio Cloud, open the indexer, **Deploy** the latest commit of `main` (deployments are manual once you delete the old ones; 3 are allowed), and wait until both chains show Synced 100%. **Promote** needs a paid plan, so use the **Deployment Endpoint** instead (eye icon, then copy): it stays valid as long as that deployment is kept. Do not delete it. Use that URL above.
 
+## Deployed
+
+| Piece | URL |
+| --- | --- |
+| Website (Vercel, `apps/dashboard`) | https://argus-mu-one.vercel.app |
+| Analyzer and demo seller (Render, Docker) | https://argus-analyzer.onrender.com |
+| Envio indexer | https://indexer.dev.hyperindex.xyz/6cd5bf1/v1/graphql |
+
+Checked from outside: all three pages return 200, the build has the Render and Envio URLs baked in, the analyzer allows cross-origin calls, agent 182 shows 7,665 reviewers as 1 operator, and the simulation runs in about 30 s. The hosted analyzer starts with an empty database, so its mainnet overview is empty until wallets are assessed; the mainnet verdicts live in the registry and the Envio index.
+
 ## 4. Access instructions for judges
 
 > Open the site. **Agents**: type any ERC-8004 agent id (try 182) and see its reviewers collapse into operators. **Dashboard**: press *Run simulation* to send 39 real x402 payments from 13 pre-funded Monad testnet wallets; 13 wallets resolve to 4 customers. No wallet, keys or funds needed. Registries: mainnet `0x151e488618FC0F79F7f91447351174Fb8D98cE98`, testnet `0xd60EBFbc9955951322e9410Ec833bA040E9dB8dE`.
