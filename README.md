@@ -1,6 +1,6 @@
 # Argus — Spot when many wallets are really one person
 
-> One person can run hundreds of wallets for free, so counting wallets counts them hundreds of times. Argus checks who funded each wallet, so every customer gets one promo and every reviewer counts once.
+> AI agents pay per call from wallets anyone can create for free. Argus tells a seller when many wallets are really one customer, so each customer gets one promo.
 
 ---
 
