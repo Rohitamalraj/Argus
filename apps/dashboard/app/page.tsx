@@ -78,7 +78,9 @@ export default function Home() {
       <section className="hero">
         <HeroArt />
         <div className="container hero-inner">
-          <h1>Count operators, not wallets.</h1>
+          <h1>
+            Count operators, <em>not wallets.</em>
+          </h1>
           <p className="lede">
             Argus tells you whether the wallets in front of you are one operator or many: x402 payers, ERC-8004 reviewers, campaign claimants. Public
             chain data in, a verdict anyone can recompute out. Built on Monad for sellers, developers and AI agents.

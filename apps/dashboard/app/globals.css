@@ -175,6 +175,14 @@ button {
   margin: 0 0 28px;
   max-width: 13ch;
 }
+/* The accent phrase: a heavy, high-contrast italic serif against the sans headline. */
+.hero h1 em {
+  font-family: var(--font-display), 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-size: 1.04em;
+}
 .lede {
   font-family: var(--font-mono);
   font-size: 17px;
