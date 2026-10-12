@@ -1,4 +1,4 @@
-# Argus — Operator Independence for x402 and ERC-8004 on Monad
+# Argus — Spot when many wallets are really one person
 
 > **The first primitive that tells you whether the wallets in front of you are one operator or many — recomputed from public chain data by anyone, so promos go to real customers and reputation counts real reviewers.**
 
