@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Footer, GITHUB, Marquee, Nav } from '@/components/chrome';
 import { HeroArt } from '@/components/hero-art';
 import { LiveCount } from '@/components/live-count';
+import { HeroScroll, Item, Reveal, ScrollProgress, Stagger } from '@/components/motion';
 
 const STEPS = [
   {
@@ -74,17 +75,24 @@ const TIERS = [
 export default function Home() {
   return (
     <>
+      <ScrollProgress />
       <Nav active="home" />
       <section className="hero">
         <HeroArt />
         <div className="container hero-inner">
-          <h1>
-            Count operators, <em>not wallets.</em>
-          </h1>
+          <HeroScroll>
+          <Reveal onLoad y={36}>
+            <h1>
+              Count operators, <em>not <span className="hero-pink">wallets.</span></em>
+            </h1>
+          </Reveal>
+          <Reveal onLoad delay={0.18}>
           <p className="lede">
             Argus tells you whether the wallets in front of you are one operator or many: x402 payers, ERC-8004 reviewers, campaign claimants. Public
             chain data in, a verdict anyone can recompute out. Built on Monad for sellers, developers and AI agents.
           </p>
+          </Reveal>
+          <Reveal onLoad delay={0.32}>
           <div className="hero-cta">
             <Link href="/agents?agent=182" className="btn btn-dark btn-lg">
               Try it on agent #182 <span className="chev">›</span>
@@ -93,12 +101,15 @@ export default function Home() {
               Integration guide
             </a>
           </div>
+          </Reveal>
+          </HeroScroll>
         </div>
         <Marquee />
       </section>
 
       <section className="section-tight">
         <div className="container">
+          <Reveal>
           <p className="eyebrow">On Monad mainnet right now</p>
           <div className="bignum">
             <div className="n">
@@ -111,6 +122,8 @@ export default function Home() {
               <span className="label">operator: one funder first funded every one of them</span>
             </div>
           </div>
+          </Reveal>
+          <Reveal delay={0.1}>
           <p className="mono small muted" style={{ marginTop: 18, maxWidth: '72ch' }}>
             The ERC-8004 spec warns that unfiltered feedback is open to Sybil attacks and expects third parties to supply the reviewer filter. This is that
             filter, from public data. Linked means shared funding, not wrongdoing.{' '}
@@ -118,18 +131,21 @@ export default function Home() {
               Run it live →
             </Link>
           </p>
+          </Reveal>
         </div>
       </section>
 
       <section className="section" id="developers">
         <div className="container">
+          <Reveal>
           <p className="eyebrow">Four ways to use it</p>
           <h2 className="display" style={{ maxWidth: '18ch' }}>
             A primitive, not an app
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 12 }}>
+          </Reveal>
+          <Stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 420px), 1fr))', gap: 12 }}>
             {USES.map((u) => (
-              <div className="card card-solid" key={u.who}>
+              <Item className="card card-solid" key={u.who}>
                 <div className="panel-title" style={{ marginBottom: 6 }}>
                   <h3 style={{ fontSize: 22 }}>{u.who}</h3>
                   <span className="mono small muted">{u.pkg}</span>
@@ -140,24 +156,24 @@ export default function Home() {
                 <pre className="code" style={{ fontSize: 12.5 }}>
                   {u.code}
                 </pre>
-              </div>
+              </Item>
             ))}
-          </div>
+          </Stagger>
         </div>
       </section>
 
       <section className="section" id="how">
         <div className="container split">
-          <div className="sticky-col">
+          <Reveal className="sticky-col">
             <p className="eyebrow">How it works</p>
             <h2 className="display">Find the operator behind the wallets</h2>
             <p className="lede" style={{ fontSize: 15 }}>
               Soft policy, never an accusation: a Linked wallet still pays and is served. It just shares one promo with the rest of its fleet.
             </p>
-          </div>
+          </Reveal>
           <div className="steps">
             {STEPS.map((s, i) => (
-              <div className="card step" key={s.t}>
+              <Reveal className="card step" key={s.t} delay={i * 0.06}>
                 <span className="step-num">0{i + 1}</span>
                 <div>
                   <h3 className="title" style={{ fontSize: 22 }}>
@@ -165,7 +181,7 @@ export default function Home() {
                   </h3>
                   <p>{s.d}</p>
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -173,18 +189,22 @@ export default function Home() {
 
       <section className="section-tight">
         <div className="container">
-          <p className="eyebrow">The x402 demo, live on Monad testnet</p>
-          <LiveCount />
+          <Reveal>
+            <p className="eyebrow">The x402 demo, live on Monad testnet</p>
+            <LiveCount />
+          </Reveal>
         </div>
       </section>
 
       <section className="section" id="tiers">
         <div className="container">
+          <Reveal>
           <p className="eyebrow">Tiers</p>
           <h2 className="display" style={{ maxWidth: '16ch' }}>
             Numbers rise with how sure we are
           </h2>
-          <div className="card table-wrap" style={{ padding: 8 }}>
+          </Reveal>
+          <Reveal delay={0.08} className="card table-wrap" style={{ padding: 8 }}>
             <table className="table">
               <thead>
                 <tr>
@@ -208,7 +228,7 @@ export default function Home() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </Reveal>
           <p className="mono small muted" style={{ marginTop: 14 }}>
             Contracts check an explicit set of allowed tiers with onlyTiers(attestor, mask), never “tier at least N”.
           </p>

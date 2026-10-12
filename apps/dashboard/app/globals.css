@@ -10,6 +10,8 @@
   --brand: #ea6f53;
   --brand-deep: #e14b1e;
   --peach: #f7cfc3;
+  /* the glow behind the hero eye (#f7b5a6), a little deeper so text in it stays readable */
+  --pink-peach: #f4a591;
   --rust: #75270f;
   --blush: #d2bebd;
   --success: #027a48;
@@ -178,6 +180,14 @@ button {
 }
 .hero h1 em {
   font-style: italic;
+}
+.hero h1 .hero-pink {
+  color: var(--pink-peach);
+}
+.nav .logo {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 22px;
 }
 .lede {
   font-family: var(--font-mono);
