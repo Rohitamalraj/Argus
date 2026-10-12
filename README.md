@@ -1,4 +1,4 @@
-# Argus — Count real customers, not wallets
+# Argus — Sybil protection for AI agent payments and reviews
 
 > Argus spots one person hiding behind many wallets, so each customer gets one promo and each review counts once.
 
