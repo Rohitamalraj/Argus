@@ -1,6 +1,6 @@
-# Argus — Spot when many wallets are really one person
+# Argus — Count real customers, not wallets
 
-> AI agents pay per call from wallets anyone can create for free. Argus tells a seller when many wallets are really one customer, so each customer gets one promo.
+> Argus spots one person hiding behind many wallets, so each customer gets one promo and each review counts once.
 
 ---
 
