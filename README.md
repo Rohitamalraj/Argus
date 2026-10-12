@@ -1,4 +1,4 @@
-# Sybil protection for AI agent payments, promos and reviews on Monad
+# Argus — Sybil protection for AI agent payments, promos and reviews on Monad
 
 > Argus spots one person hiding behind many wallets, so each customer gets one promo and each review counts once.
 
