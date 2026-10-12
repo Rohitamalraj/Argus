@@ -1,6 +1,6 @@
 # Argus — Spot when many wallets are really one person
 
-> **The first primitive that tells you whether the wallets in front of you are one operator or many — recomputed from public chain data by anyone, so promos go to real customers and reputation counts real reviewers.**
+> One person can run hundreds of wallets for free, so counting wallets counts them hundreds of times. Argus checks who funded each wallet, so every customer gets one promo and every reviewer counts once.
 
 ---
 
