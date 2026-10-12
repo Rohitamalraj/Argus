@@ -1,12 +1,9 @@
 import type { Metadata } from 'next';
-import { Inter_Tight, JetBrains_Mono, Playfair_Display } from 'next/font/google';
+import { IBM_Plex_Mono, Sora } from 'next/font/google';
 import './globals.css';
 
-const interTight = Inter_Tight({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-inter-tight' });
-const jetbrains = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-jetbrains' });
-
-// Display serif for the hero accent (bold italic). Swap the family here to change the look.
-const display = Playfair_Display({ subsets: ['latin'], weight: ['700', '800'], style: ['italic'], variable: '--font-display' });
+const sora = Sora({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], variable: '--font-sora' });
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-plex-mono' });
 
 export const metadata: Metadata = {
   title: 'Argus — one promo per customer, not per wallet',
@@ -16,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${interTight.variable} ${jetbrains.variable} ${display.variable}`}>
+    <html lang="en" className={`${sora.variable} ${plexMono.variable}`}>
       <body>{children}</body>
     </html>
   );
