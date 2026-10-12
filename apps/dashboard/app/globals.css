@@ -647,7 +647,7 @@ h3.title {
 /* ---------- Hero graph ---------- */
 .hero-graph-wrap {
   position: absolute;
-  top: 104px;
+  top: 110px;
   left: 0;
   right: 0;
   margin: 0 auto;
@@ -658,7 +658,7 @@ h3.title {
 }
 .hg {
   pointer-events: auto;
-  width: min(41vw, 590px);
+  width: min(37vw, 535px);
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(10px);
   border: 1px solid var(--line-2);
@@ -800,4 +800,9 @@ h3.title {
   .hg-flow {
     animation: none;
   }
+}
+
+.hg-chips .hg-conf-chip {
+  background: var(--ink);
+  color: #fff;
 }

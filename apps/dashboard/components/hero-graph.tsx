@@ -91,15 +91,17 @@ export function HeroGraph() {
   const reduce = useReducedMotion();
   const [mode, setMode] = useState<Mode>(reduce ? 'operators' : 'wallets');
   const [focus, setFocus] = useState<Group | null>(null);
-  const touched = useRef(false);
+  // idle: nobody is pointing at the graph, so it plays the story on its own
+  const [idle, setIdle] = useState(true);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Play the story on its own until the visitor takes over: scattered wallets, then regrouped, then back.
+  // While nobody is pointing at it, play the story on its own: scattered wallets, then regrouped, then back.
   useEffect(() => {
-    if (reduce) return;
+    if (reduce || !idle) return;
     let alive = true;
     let timer: ReturnType<typeof setTimeout>;
     const step = (next: Mode) => {
-      if (!alive || touched.current) return;
+      if (!alive) return;
       setMode(next);
       timer = setTimeout(() => step(next === 'wallets' ? 'operators' : 'wallets'), next === 'wallets' ? 3200 : 7000);
     };
@@ -108,10 +110,16 @@ export function HeroGraph() {
       alive = false;
       clearTimeout(timer);
     };
-  }, [reduce]);
+  }, [reduce, idle]);
 
+  // Moving the mouse onto the graph regroups the wallets into customers; moving it away scatters them again.
+  const onEnter = () => {
+    clearTimeout(leaveTimer.current);
+    setIdle(false);
+    if (!reduce) setMode('operators');
+  };
   const choose = (m: Mode) => {
-    touched.current = true;
+    setIdle(false);
     setMode(m);
   };
   const operators = mode === 'operators';
@@ -132,12 +140,17 @@ export function HeroGraph() {
     mx.set(0);
     my.set(0);
     setFocus(null);
+    if (reduce) return;
+    leaveTimer.current = setTimeout(() => {
+      setMode('wallets');
+      setIdle(true);
+    }, 700);
   };
 
   const ev = EVIDENCE[shown];
 
   return (
-    <div className="hg" onPointerMove={reduce ? undefined : onMove} onPointerLeave={onLeave}>
+    <div className="hg" onPointerEnter={onEnter} onPointerMove={reduce ? undefined : onMove} onPointerLeave={onLeave}>
       <div className="hg-bar">
         <div className="hg-seg" role="group" aria-label="View">
           {(['wallets', 'operators'] as const).map((m) => (
@@ -265,7 +278,6 @@ export function HeroGraph() {
                   {ev.tier}
                 </span>
                 <span className="hg-title">{ev.title}</span>
-                <span className="hg-conf">{ev.confidence}</span>
               </div>
               <ul className="hg-reasons">
                 {ev.reasons.map((r) => (
@@ -273,6 +285,7 @@ export function HeroGraph() {
                 ))}
               </ul>
               <div className="hg-chips">
+                <span className="hg-conf-chip">{ev.confidence}</span>
                 {ev.chips.map((c) => (
                   <span key={c}>{c}</span>
                 ))}
