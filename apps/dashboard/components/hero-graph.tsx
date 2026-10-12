@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useMotionValue, useReducedMotion, useSpring, useTransform } from 'framer-motion';
 
 /**
@@ -17,6 +17,7 @@ const LINKED = '#e14b1e';
 const INDEPENDENT = '#027a48';
 const NEUTRAL = '#9d9291';
 const EASE = [0.22, 1, 0.36, 1] as const;
+const CYCLE_MS = 3000;
 
 const FUNDER = { x: 168, y: 205 };
 const HULL_R = 124;
@@ -91,37 +92,16 @@ export function HeroGraph() {
   const reduce = useReducedMotion();
   const [mode, setMode] = useState<Mode>(reduce ? 'operators' : 'wallets');
   const [focus, setFocus] = useState<Group | null>(null);
-  // idle: nobody is pointing at the graph, so it plays the story on its own
-  const [idle, setIdle] = useState(true);
-  const leaveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // While nobody is pointing at it, play the story on its own: scattered wallets, then regrouped, then back.
+  // Flip between "13 wallets" and "4 customers" every 3 seconds, with or without the mouse.
+  // A click on a button shows that view and the timer starts over from there.
   useEffect(() => {
-    if (reduce || !idle) return;
-    let alive = true;
-    let timer: ReturnType<typeof setTimeout>;
-    const step = (next: Mode) => {
-      if (!alive) return;
-      setMode(next);
-      timer = setTimeout(() => step(next === 'wallets' ? 'operators' : 'wallets'), next === 'wallets' ? 3200 : 7000);
-    };
-    timer = setTimeout(() => step('operators'), 1800);
-    return () => {
-      alive = false;
-      clearTimeout(timer);
-    };
-  }, [reduce, idle]);
+    if (reduce) return;
+    const t = setTimeout(() => setMode((m) => (m === 'wallets' ? 'operators' : 'wallets')), CYCLE_MS);
+    return () => clearTimeout(t);
+  }, [mode, reduce]);
 
-  // Moving the mouse onto the graph regroups the wallets into customers; moving it away scatters them again.
-  const onEnter = () => {
-    clearTimeout(leaveTimer.current);
-    setIdle(false);
-    if (!reduce) setMode('operators');
-  };
-  const choose = (m: Mode) => {
-    setIdle(false);
-    setMode(m);
-  };
+  const choose = (m: Mode) => setMode(m);
   const operators = mode === 'operators';
   const shown: Group = focus ?? 'A';
   const dim = (g: Group) => (operators && focus && focus !== g ? 0.22 : 1);
@@ -140,17 +120,12 @@ export function HeroGraph() {
     mx.set(0);
     my.set(0);
     setFocus(null);
-    if (reduce) return;
-    leaveTimer.current = setTimeout(() => {
-      setMode('wallets');
-      setIdle(true);
-    }, 700);
   };
 
   const ev = EVIDENCE[shown];
 
   return (
-    <div className="hg" onPointerEnter={onEnter} onPointerMove={reduce ? undefined : onMove} onPointerLeave={onLeave}>
+    <div className="hg" onPointerMove={reduce ? undefined : onMove} onPointerLeave={onLeave}>
       <div className="hg-bar">
         <div className="hg-seg" role="group" aria-label="View">
           {(['wallets', 'operators'] as const).map((m) => (
