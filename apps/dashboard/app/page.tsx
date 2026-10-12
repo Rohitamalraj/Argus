@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Footer, GITHUB, Marquee, Nav } from '@/components/chrome';
 import { HeroArt } from '@/components/hero-art';
+import { HeroGraph } from '@/components/hero-graph';
 import { LiveCount } from '@/components/live-count';
 import { HeroScroll, Item, Reveal, ScrollProgress, Stagger } from '@/components/motion';
 
@@ -79,6 +80,9 @@ export default function Home() {
       <Nav active="home" />
       <section className="hero">
         <HeroArt />
+        <div className="container hero-graph-wrap">
+          <HeroGraph />
+        </div>
         <div className="container hero-inner">
           <HeroScroll>
           <Reveal onLoad y={36}>
