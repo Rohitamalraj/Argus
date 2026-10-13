@@ -1,6 +1,17 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/argus-logo-horizontal-dark.svg" />
+    <img src="assets/brand/argus-logo-horizontal.svg" alt="Argus" width="460" />
+  </picture>
+</p>
+
 # Argus — Sybil protection for AI agent payments, promos and reviews on Monad
 
 > Argus spots one person hiding behind many wallets, so each customer gets one promo and each review counts once.
+
+<p align="center">
+  <img src="assets/screens/hero.jpg" alt="The Argus site: 'Count operators, not wallets', with 13 wallets resolving to 4 customers" width="900" />
+</p>
 
 ---
 
@@ -98,10 +109,42 @@ Argus is the complement of identity credentials, not a replacement: it does not 
 | **Website** | <https://argus-mu-one.vercel.app> |
 | **Demo store** | <https://argus-mu-one.vercel.app/store> — a real x402 seller running the middleware: get a live quote for any wallet, buy with your own wallet, and watch real promo claims settle on Monad testnet |
 | **Agents page** | <https://argus-mu-one.vercel.app/agents?agent=182&network=mainnet> — 7,665 reviewers collapse to 1 operator |
-| **Dashboard** | <https://argus-mu-one.vercel.app/dashboard> — press *Run simulation*: 13 wallets make real x402 payments on Monad testnet and resolve to 4 customers (about 30 s) |
+| **Dashboard** | <https://argus-mu-one.vercel.app/dashboard> — press *Run simulation*: 13 wallets make real x402 payments on Monad testnet and resolve to 4 customers (30 seconds to 2 minutes) |
 | **Analyzer API** | <https://argus-analyzer.onrender.com/health> (free host: the first request after idle takes about a minute) |
 
 No wallet, keys or funds are needed to try it. Testnet verdicts shown on the dashboard are published on-chain by a **Dynamic MPC wallet**.
+
+### What it looks like
+
+Real screenshots from the live product, taken while recording the demo (real Chrome and terminal windows, real Monad payments).
+
+**A real x402 seller, protected by Argus.** 13 wallets paid, 4 real customers, 29 promo calls settled.
+
+<img src="assets/screens/store.jpg" alt="The demo store: 13 paying wallets, 4 real customers, 29 promo calls settled" width="900" />
+
+**One promo per operator.** The 10 farm wallets share one allowance of 20 promo calls; once it is used up the whole fleet pays the standard price, while each independent wallet keeps its own.
+
+<img src="assets/screens/promo-allowance.jpg" alt="Promo allowance by operator: one Linked operator with 10 wallets at 20 of 20 used, three Independent wallets at 3 of 20" width="900" />
+
+**ERC-8004 agent #182 on Monad mainnet.** 7,665 reviews resolve to one operator, and the agent's own owner funded every reviewer we sampled.
+
+<img src="assets/screens/agent-182.jpg" alt="The Agents page: 7,665 reviewers resolve to 1 operator, owner-funded" width="900" />
+
+**Nansen as the independent second source** (live mainnet deep check). Both sources name the same first funder, so confidence rises.
+
+<img src="assets/screens/nansen-deep-check.jpg" alt="A live deep check: sources agree on the first funder (envio-hypersync, nansen); Nansen also sees the funder paying 10 wallets" width="900" />
+
+**Verify, don't trust.** The published verdict is recomputed locally from public chain data and returns MATCH.
+
+<img src="assets/screens/cli-check-verify.jpg" alt="argus-x402 check and verify in a terminal: Linked (high confidence), MATCH" width="900" />
+
+**Signed by a Dynamic MPC wallet.** The verdict transaction on MonadVision, sent by the Dynamic attestor wallet.
+
+<img src="assets/screens/dynamic-signed-verdict.jpg" alt="MonadVision: an AttestBatch transaction sent by the Dynamic MPC wallet to the Argus registry" width="900" />
+
+**For AI agents.** Claude Code with the Argus MCP server answers "Is agent 182's reputation real?" from chain data.
+
+<img src="assets/screens/claude-code-mcp.jpg" alt="Claude Code calling the Argus MCP tool and answering that agent 182's reputation is not independent" width="900" />
 
 ---
 
@@ -370,9 +413,10 @@ Argus/
 │   └── src/handlers/
 │
 ├── apps/
-│   ├── dashboard/              # demo + docs site (Next.js): customers vs wallets, Agents page
+│   ├── dashboard/              # demo + docs site (Next.js): live store, customers vs wallets, Agents page
 │   └── seller-demo/            # a demo x402 seller
 │
+├── assets/                     # brand (logos, icon) and README screenshots
 ├── scripts/                    # demo wallets, release build, deployment, mainnet run
 ├── docs/                       # ARCHITECTURE, INTEGRATE, ERC8004, EVAL, NANSEN, DEPLOY, DESIGN
 └── .github/workflows/ci.yml    # typecheck, tests, release build, forge test
@@ -462,6 +506,8 @@ npm run dev -w @argus/dashboard          # website on :3000
 - **Direct transfers only.** A wallet funded through a contract has no inbound transfer to trace. HyperSync returns no internal-transfer traces for Monad, so those wallets count as independent; contract *reviewers* are grouped by deployer instead.
 - **A shared funder is a clue, not proof.** Legitimate platforms fund many agent wallets from one treasury, which is why the policy is soft and a Linked wallet is still served.
 - **S5 is a judgement call.** The 50% and 10-wallet thresholds are defaults to tune, not findings.
+- **The demo store resets.** The analyzer runs on a free host that sleeps when idle (the first request can take about a minute) and clears its claims feed on restart, so the store can look empty until someone pays. The dashboard's *Run simulation* refills it.
+- **The "Connect wallet and buy" button is untested.** It needs a browser wallet with testnet USDC. Quotes, the claims feed and the 13-wallet payments are tested against the live site.
 - **Agent #182 may be benign.** Its tags (`eve`, `spawn`, `plague`) suggest a game or simulation. Shared funding is not wrongdoing; it does mean the reviewers are one operator.
 
 ---
@@ -470,7 +516,7 @@ npm run dev -w @argus/dashboard          # website on :3000
 
 - Verdicts use **public chain data only**; every seller gets the same answer for the same wallet
 - The hosted analyzer holds a **testnet** signer (or a Dynamic wallet); mainnet publishing is off unless `PUBLISH_MAINNET=true`
-- The Docker, Render and Vercel files (`Dockerfile`, `render.yaml`, [docs/DEPLOY.md](docs/DEPLOY.md)) are written but not yet exercised on a real host
+- The analyzer and demo seller run on Render from the `Dockerfile` and the website on Vercel (see `render.yaml` and [docs/DEPLOY.md](docs/DEPLOY.md)); both are on free plans
 - Built with the help of AI coding tools (Claude Code). All code was written for this hackathon; there is no pre-existing code
 
 ---
