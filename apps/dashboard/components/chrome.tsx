@@ -77,7 +77,11 @@ export function Footer() {
         </div>
         <div>
           <div className="links">
+            <Link href="/store">Store</Link>
             <Link href="/dashboard">Dashboard</Link>
+            <a href="https://www.npmjs.com/search?q=argus-x402" target="_blank" rel="noreferrer">
+              npm packages
+            </a>
             <a href={GITHUB} target="_blank" rel="noreferrer">
               GitHub
             </a>

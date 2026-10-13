@@ -28,6 +28,7 @@ const USES = [
   {
     who: 'x402 seller',
     pkg: 'argus-x402-middleware',
+    href: 'https://www.npmjs.com/package/argus-x402-middleware',
     line: 'One promo per operator, not per wallet.',
     code: `app.use(argus({
   network: 'mainnet', payTo: SELLER,
@@ -39,6 +40,7 @@ const USES = [
   {
     who: 'AI agent',
     pkg: 'argus-x402-mcp',
+    href: 'https://www.npmjs.com/package/argus-x402-mcp',
     line: 'Tools for Claude Code and any MCP client.',
     code: `claude mcp add argus \\
   -e ENVIO_API_TOKEN=<token> \\
@@ -50,6 +52,7 @@ const USES = [
   {
     who: 'Developer',
     pkg: 'argus-x402-sdk',
+    href: 'https://www.npmjs.com/package/argus-x402-sdk',
     line: 'Verify locally. De-duplicate reputation.',
     code: `const argus = createArgus({ network: 'mainnet', hypersyncToken });
 const rep = await argus.agentReputation(182);
@@ -59,12 +62,15 @@ rep.independent.operators; // 1`,
   {
     who: 'Smart contract',
     pkg: 'ArgusGate',
+    href: `${GITHUB}/blob/main/contracts/src/ArgusGate.sol`,
     line: 'Gate a function by an explicit set of tiers.',
     code: `uint8 constant OK = (1 << 2) | (1 << 3);
 function claim() external
   onlyTiers(ATTESTOR, OK) { ... }`,
   },
 ];
+
+const NPM_PACKAGES = ['argus-x402-middleware', 'argus-x402-sdk', 'argus-x402-mcp', 'argus-x402-scoring'];
 
 const TIERS = [
   ['Unclear', 'unclear', 'No verdict yet, expired, no funding trace, or a shared funder with no second signal', 'Standard price'],
@@ -152,7 +158,9 @@ export default function Home() {
               <Item className="card card-solid" key={u.who}>
                 <div className="panel-title" style={{ marginBottom: 6 }}>
                   <h3 style={{ fontSize: 22 }}>{u.who}</h3>
-                  <span className="mono small muted">{u.pkg}</span>
+                  <a href={u.href} target="_blank" rel="noreferrer" className="mono small muted" style={{ textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                    {u.pkg} ↗
+                  </a>
                 </div>
                 <p className="mono small" style={{ color: 'var(--ink-2)', margin: '0 0 14px' }}>
                   {u.line}
@@ -163,6 +171,19 @@ export default function Home() {
               </Item>
             ))}
           </Stagger>
+          <Reveal>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginTop: 22 }}>
+              <span className="mono small muted">Published on npm</span>
+              {NPM_PACKAGES.map((p) => (
+                <a key={p} href={`https://www.npmjs.com/package/${p}`} target="_blank" rel="noreferrer" className="chip mono" style={{ fontSize: 13 }}>
+                  {p} ↗
+                </a>
+              ))}
+            </div>
+            <p className="mono small muted" style={{ margin: '10px 0 0' }}>
+              npm install argus-x402-sdk · all four are MIT licensed and read public Monad chain data.
+            </p>
+          </Reveal>
         </div>
       </section>
 
