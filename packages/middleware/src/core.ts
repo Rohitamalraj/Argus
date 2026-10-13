@@ -59,6 +59,8 @@ export function createCore(o: ArgusOptions, deps: ArgusDeps = {}) {
   const als = new AsyncLocalStorage<ArgusContext>();
   /** Promo keys of paid requests waiting for settlement, by authorization nonce. */
   const pendingPromo = new Map<string, string>();
+  /** What was decided for a paid request, by authorization nonce, so the settlement report can say it. */
+  const pendingInfo = new Map<string, { tierName: string; operatorId?: string; promoLeft: number; ns: string }>();
 
   const assetAmount = (amount: bigint) => ({ amount: amount.toString(), asset: net.usdc, extra: { name: 'USDC', version: '2' } });
   const server =
@@ -78,10 +80,27 @@ export function createCore(o: ArgusOptions, deps: ArgusDeps = {}) {
     const paid = fromPayload(ctx.paymentPayload.payload);
     if (!paid) return;
     const key = paid.nonce ? pendingPromo.get(paid.nonce) : undefined;
-    if (paid.nonce) pendingPromo.delete(paid.nonce);
+    const decided = paid.nonce ? pendingInfo.get(paid.nonce) : undefined;
+    if (paid.nonce) {
+      pendingPromo.delete(paid.nonce);
+      pendingInfo.delete(paid.nonce);
+    }
     if (key && BigInt(ctx.requirements.amount) === units.promo) store.consume(key);
     log(`[argus] settled ${ctx.requirements.amount} from ${paid.from}${key ? ` (promo ${key})` : ''}`);
-    report('/v1/paid', { network: o.network, wallet: paid.from, seller: o.seller ?? 'seller', promo: !!key }, paid.from);
+    report(
+      '/v1/paid',
+      {
+        network: o.network,
+        wallet: paid.from,
+        seller: o.seller ?? 'seller',
+        promo: !!key,
+        // What a seller-facing "claims" view needs: the settlement, the price, and why.
+        tx: ctx.result.transaction,
+        amount: ctx.requirements.amount,
+        ...(decided ?? {}),
+      },
+      paid.from,
+    );
   });
 
   const routes = Object.fromEntries(
@@ -123,6 +142,7 @@ export function createCore(o: ArgusOptions, deps: ArgusDeps = {}) {
       const ns = o.namespace?.(req.raw as never) ?? o.seller ?? 'seller';
       const q = quote(payer, verdict, { policy, store, ns, mismatch });
       if (signed?.nonce && q.price === 'promo' && q.key) pendingPromo.set(signed.nonce, q.key);
+      if (signed?.nonce) pendingInfo.set(signed.nonce, { tierName: verdict?.tierName ?? 'Unknown', ...(verdict?.operatorId ? { operatorId: verdict.operatorId } : {}), promoLeft: q.price === 'promo' ? Math.max(0, q.promoLeft - 1) : q.promoLeft, ns });
 
       const info: ArgusInfo = {
         ...(payer ? { payer } : {}),

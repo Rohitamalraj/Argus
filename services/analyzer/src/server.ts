@@ -79,4 +79,4 @@ const sim = new SimRunner({ root: ROOT, sellerUrl: process.env.SIM_SELLER_URL ??
 const agents = new AgentReputationService((net, id, sample) =>
   agentReputation(id, { chain: new HyperSyncClient(NETWORKS[net].hypersync, NETWORKS[net].usdc, env.envioToken, 0), network: net === 'mainnet' ? 'mainnet' : 'testnet', maxClients: sample, identity: identityReader(net === 'mainnet' ? 'mainnet' : 'testnet') }),
 );
-createApi({ store, assessor, sim, agents }).listen(env.port, () => console.log(`Argus analyzer on http://localhost:${env.port}`));
+createApi({ store, assessor, sim, agents, sellerUrl: process.env.SIM_SELLER_URL ?? 'http://localhost:4021' }).listen(env.port, () => console.log(`Argus analyzer on http://localhost:${env.port}`));

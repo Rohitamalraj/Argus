@@ -217,3 +217,24 @@ describe('agent reputation endpoint', () => {
     expect((await request(app).get('/v1/agent/182/reputation')).status).toBe(503);
   });
 });
+
+describe('claims (the storefront feed)', () => {
+  const tx = `0x${'ab'.repeat(32)}`;
+  it('records each settled payment with its price, tier and settlement, newest first, grouped by operator', async () => {
+    const { f, ind, app } = setup();
+    const paid = (wallet: string, body: object) => request(app).post('/v1/paid').send({ network: 'testnet', wallet, seller: 'demo', ns: 'demo:live', ...body });
+    await paid(f.wallets[0]!, { promo: true, amount: '1000', tierName: 'Linked', operatorId: '0xfarm', promoLeft: 19, tx });
+    await paid(f.wallets[1]!, { promo: true, amount: '1000', tierName: 'Linked', operatorId: '0xfarm', promoLeft: 18, tx: 'not-a-hash' });
+    await paid(ind.wallets[0]!, { promo: false, amount: '2000', tierName: 'Independent', operatorId: '0xindie' });
+    await paid(ind.wallets[1]!, { promo: true, ns: 'demo:other' });
+
+    const r = await request(app).get('/v1/claims?network=testnet&ns=demo:live');
+    expect(r.body.claims).toHaveLength(3);
+    expect(r.body.claims[2]).toMatchObject({ promo: true, amount: '1000', tier: 'Linked', operator: '0xfarm', promoLeft: 19, tx });
+    expect(r.body.claims[1].tx).toBeUndefined(); // only a real 32-byte hash is kept
+    expect(r.body.claims[0]).toMatchObject({ promo: false, tier: 'Independent' });
+    const farm = r.body.operators.find((o: { operator: string }) => o.operator === '0xfarm');
+    expect(farm).toMatchObject({ promoUsed: 2, standardPaid: 0 });
+    expect(farm.wallets).toHaveLength(2);
+  });
+});

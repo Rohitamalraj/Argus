@@ -27,7 +27,7 @@ export function Logo() {
   );
 }
 
-export function Nav({ active }: { active?: 'home' | 'dashboard' | 'agents' }) {
+export function Nav({ active }: { active?: 'home' | 'dashboard' | 'agents' | 'store' }) {
   return (
     <header className="nav">
       <div className="container">
@@ -39,6 +39,9 @@ export function Nav({ active }: { active?: 'home' | 'dashboard' | 'agents' }) {
           <Link href="/agents" className={active === 'agents' ? 'active' : undefined}>
             Agents
           </Link>
+          <Link href="/store" className={active === 'store' ? 'active' : undefined}>
+            Store
+          </Link>
           <Link href="/dashboard" className={active === 'dashboard' ? 'active' : undefined}>
             Dashboard
           </Link>
@@ -47,8 +50,8 @@ export function Nav({ active }: { active?: 'home' | 'dashboard' | 'agents' }) {
           </a>
         </nav>
         <div className="nav-actions">
-          <Link href="/dashboard#simulate" className="btn btn-dark">
-            Run simulation
+          <Link href="/store" className="btn btn-dark">
+            Try the live store
           </Link>
           <a href={`${GITHUB}#readme`} target="_blank" rel="noreferrer" className="btn btn-light">
             Read the docs

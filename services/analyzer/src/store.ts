@@ -31,6 +31,20 @@ export interface VerdictRecord {
   attestationTx?: Hex;
 }
 
+export interface Claim {
+  network: Network;
+  wallet: Address;
+  seller: string;
+  ns?: string;
+  promo: boolean;
+  amount?: string;
+  tier?: string;
+  operator?: string;
+  promoLeft?: number;
+  tx?: string;
+  ts: number;
+}
+
 export class Store {
   private db: DatabaseSyncType;
 
@@ -44,6 +58,9 @@ export class Store {
         PRIMARY KEY (network, wallet));
       CREATE TABLE IF NOT EXISTS evidence (hash TEXT PRIMARY KEY, json TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS payments (network TEXT, wallet TEXT, seller TEXT, ts INTEGER);
+      CREATE TABLE IF NOT EXISTS claims (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, network TEXT NOT NULL, wallet TEXT NOT NULL, seller TEXT NOT NULL,
+        ns TEXT, promo INTEGER NOT NULL, amount TEXT, tier TEXT, operator TEXT, promo_left INTEGER, tx TEXT, ts INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS costs (provider TEXT, network TEXT, calls INTEGER, usd REAL, ts INTEGER);
     `);
   }
@@ -79,6 +96,33 @@ export class Store {
   markPaid(network: Network, wallet: Address, seller: string, ts: number): void {
     this.db.prepare('INSERT INTO payments (network, wallet, seller, ts) VALUES (?, ?, ?, ?)').run(network, wallet.toLowerCase(), seller, ts);
     this.db.prepare('UPDATE verdicts SET paid = 1 WHERE network = ? AND wallet = ?').run(network, wallet.toLowerCase());
+  }
+
+  /** A settled payment at a seller, with what the seller decided: the price, the tier, the operator. */
+  addClaim(c: Claim): void {
+    this.db
+      .prepare('INSERT INTO claims (network, wallet, seller, ns, promo, amount, tier, operator, promo_left, tx, ts) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(c.network, c.wallet.toLowerCase(), c.seller, c.ns ?? null, c.promo ? 1 : 0, c.amount ?? null, c.tier ?? null, c.operator ?? null, c.promoLeft ?? null, c.tx ?? null, c.ts);
+  }
+
+  /** Newest first. `ns` filters to one promo namespace (for example "seller-a:live"). */
+  recentClaims(network: Network, limit: number, ns?: string): Claim[] {
+    const rows = this.db
+      .prepare(`SELECT * FROM claims WHERE network = ? ${ns ? 'AND ns = ?' : ''} ORDER BY id DESC LIMIT ?`)
+      .all(...(ns ? [network, ns, limit] : [network, limit])) as Record<string, unknown>[];
+    return rows.map((r) => ({
+      network: r.network as Network,
+      wallet: r.wallet as Address,
+      seller: r.seller as string,
+      ...(r.ns ? { ns: r.ns as string } : {}),
+      promo: r.promo === 1,
+      ...(r.amount ? { amount: r.amount as string } : {}),
+      ...(r.tier ? { tier: r.tier as string } : {}),
+      ...(r.operator ? { operator: r.operator as string } : {}),
+      ...(r.promo_left != null ? { promoLeft: r.promo_left as number } : {}),
+      ...(r.tx ? { tx: r.tx as string } : {}),
+      ts: r.ts as number,
+    }));
   }
 
   hasPaid(network: Network, wallet: Address): boolean {

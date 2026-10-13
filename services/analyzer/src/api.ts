@@ -12,6 +12,8 @@ export interface ApiDeps {
   assessor: Assessor;
   sim?: SimRunner;
   agents?: AgentReputationService;
+  /** The demo seller to expose at /seller (internal URL). */
+  sellerUrl?: string;
   now?: () => number;
 }
 
@@ -36,12 +38,15 @@ const wrap =
   (fn: (req: Request, res: Response) => Promise<unknown>) => (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
 
-export function createApi({ store, assessor, sim, agents, now = () => Math.floor(Date.now() / 1000) }: ApiDeps) {
+export function createApi({ store, assessor, sim, agents, sellerUrl, now = () => Math.floor(Date.now() / 1000) }: ApiDeps) {
   const app = express();
   app.use(express.json({ limit: '100kb' }));
   app.use((_req, res, next) => {
     res.setHeader('access-control-allow-origin', '*');
-    res.setHeader('access-control-allow-headers', 'content-type');
+    res.setHeader('access-control-allow-headers', 'content-type, payment-signature, x-payment, x-payer-address, x-argus-namespace');
+    res.setHeader('access-control-allow-methods', 'GET, POST, OPTIONS');
+    res.setHeader('access-control-expose-headers', 'payment-required, payment-response, x-payment-response');
+    if (_req.method === 'OPTIONS') return void res.status(204).end();
     next();
   });
 
@@ -80,6 +85,20 @@ export function createApi({ store, assessor, sim, agents, now = () => Math.floor
       const wallet = address(req.body?.wallet);
       const seller = String(req.body?.seller ?? 'unknown').slice(0, 100);
       store.markPaid(net, wallet, seller, now());
+      const b = req.body ?? {};
+      store.addClaim({
+        network: net,
+        wallet,
+        seller,
+        ...(typeof b.ns === 'string' ? { ns: b.ns.slice(0, 100) } : {}),
+        promo: b.promo === true,
+        ...(typeof b.amount === 'string' ? { amount: b.amount.slice(0, 30) } : {}),
+        ...(typeof b.tierName === 'string' ? { tier: b.tierName.slice(0, 30) } : {}),
+        ...(typeof b.operatorId === 'string' ? { operator: b.operatorId.slice(0, 80) } : {}),
+        ...(typeof b.promoLeft === 'number' ? { promoLeft: b.promoLeft } : {}),
+        ...(typeof b.tx === 'string' && /^0x[0-9a-fA-F]{64}$/.test(b.tx) ? { tx: b.tx } : {}),
+        ts: now(),
+      });
       // A settled promo claim on mainnet also gets the Nansen cross-check (AN-2); everything else stays light.
       const [v] = await assessor.assess(net, [wallet], false, req.body?.promo === true ? 'deep' : 'light');
       store.markPaid(net, wallet, seller, now()); // the verdict row may not have existed before
@@ -155,6 +174,62 @@ export function createApi({ store, assessor, sim, agents, now = () => Math.floor
       res.json({ ...(await r.result), joined: r.joined });
     }),
   );
+
+  /** Real settled payments at the demo seller, newest first: who paid, at which price, and the transaction. */
+  app.get(
+    '/v1/claims',
+    wrap(async (req, res) => {
+      const net = network(req.query.network ?? 'testnet');
+      const limit = Math.min(200, Math.max(1, Number(req.query.limit ?? 50) || 50));
+      const ns = typeof req.query.ns === 'string' ? req.query.ns.slice(0, 100) : undefined;
+      const claims = store.recentClaims(net, limit, ns);
+      // Per operator: how many promo calls have settled (the shared allowance), and which wallets used it.
+      const ops = new Map<string, { operator: string; tier: string; promoUsed: number; standardPaid: number; wallets: Set<string> }>();
+      for (const c of store.recentClaims(net, 1000, ns)) {
+        const k = c.operator ?? c.wallet;
+        const o = ops.get(k) ?? { operator: k, tier: c.tier ?? 'Unknown', promoUsed: 0, standardPaid: 0, wallets: new Set<string>() };
+        c.promo ? o.promoUsed++ : o.standardPaid++;
+        o.wallets.add(c.wallet);
+        ops.set(k, o);
+      }
+      res.json({
+        network: net,
+        claims,
+        operators: [...ops.values()].map((o) => ({ ...o, wallets: [...o.wallets] })).sort((a, b) => b.wallets.length - a.wallets.length),
+      });
+    }),
+  );
+
+  /**
+   * The demo seller, public through this server so a browser can pay it over x402. It only forwards GET
+   * and OPTIONS to the seller running next to the analyzer, and limits wallet quotes per client.
+   */
+  if (sellerUrl) {
+    const hits = new Map<string, { n: number; reset: number }>();
+    app.use('/seller', (req: Request, res: Response, next: NextFunction) => {
+      if (req.method === 'OPTIONS') return void res.status(204).end();
+      if (req.method !== 'GET') return void res.status(405).json({ error: 'GET only' });
+      if (req.path === '/api/quote') {
+        const ip = String(req.headers['x-forwarded-for'] ?? req.ip ?? 'x').split(',')[0]!.trim();
+        const t = Date.now();
+        const h = hits.get(ip);
+        if (!h || h.reset < t) hits.set(ip, { n: 1, reset: t + 60_000 });
+        else if (++h.n > 40) return void res.status(429).json({ error: 'too many quote requests, try again in a minute' });
+      }
+      const skip = new Set(['host', 'connection', 'content-length', 'accept-encoding']);
+      const headers: Record<string, string> = {};
+      for (const [k, v] of Object.entries(req.headers)) if (!skip.has(k) && typeof v === 'string') headers[k] = v;
+      fetch(sellerUrl + req.originalUrl.replace(/^\/seller/, ''), { headers, signal: AbortSignal.timeout(60_000) })
+        .then(async (r) => {
+          res.status(r.status);
+          r.headers.forEach((v, k) => {
+            if (!['content-encoding', 'content-length', 'transfer-encoding', 'connection', 'access-control-allow-origin'].includes(k)) res.setHeader(k, v);
+          });
+          res.send(Buffer.from(await r.arrayBuffer()));
+        })
+        .catch(next);
+    });
+  }
 
   app.get('/v1/costs', (_req, res) => {
     res.json({ costs: store.costs() });

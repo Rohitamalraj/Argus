@@ -11,7 +11,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import express from 'express';
-import { FilePromoStore, argus, type Address, type ArgusNetwork } from '@argus/middleware';
+import { FilePromoStore, argus, createCore, type Address, type ArgusNetwork, type ArgusOptions } from '@argus/middleware';
 import { createArgus, localResolver } from '@argus/sdk';
 
 const ROOT = resolve(import.meta.dirname, '../../..');
@@ -37,25 +37,56 @@ if (local && !process.env.ENVIO_API_TOKEN) throw new Error('ARGUS_LOCAL needs EN
 const resolver = local ? localResolver(createArgus({ network, hypersyncToken: process.env.ENVIO_API_TOKEN })) : undefined;
 const store = new FilePromoStore(process.env.PROMO_STORE ?? resolve(ROOT, 'data', `promos-${seller}${local ? '-local' : ''}.json`));
 
+const options: ArgusOptions = {
+  network,
+  payTo,
+  price,
+  routes: ['GET /api/premium'],
+  policy: { promoCalls: 20, promoPerOperator: true },
+  attestors: !local && attestor ? [attestor] : [],
+  ...(local ? {} : { analyzerUrl: process.env.ANALYZER_URL ?? 'http://localhost:8787' }),
+  ...(resolver ? { resolver } : {}),
+  store,
+  seller,
+  // A judge simulation run passes its own namespace so promo counters start at zero.
+  namespace: (req) => `${seller}:${(req as express.Request).header('x-argus-namespace') ?? 'live'}`,
+  description: 'Monad market signal (demo)',
+  log: (m) => console.log(m),
+};
+
 const app = express();
-app.use(
-  argus({
-    network,
-    payTo,
-    price,
-    routes: ['GET /api/premium'],
-    policy: { promoCalls: 20, promoPerOperator: true },
-    attestors: !local && attestor ? [attestor] : [],
-    ...(local ? {} : { analyzerUrl: process.env.ANALYZER_URL ?? 'http://localhost:8787' }),
-    ...(resolver ? { resolver } : {}),
-    store,
+app.use(argus(options));
+
+// The storefront asks "what would this wallet pay?" before any payment. Same core, same verdicts, same promo
+// counters as the paid route; it only reads (it never consumes a promo).
+const quoter = createCore(options);
+app.get('/api/quote', async (req, res) => {
+  const payer = String(req.query.payer ?? '');
+  if (!/^0x[0-9a-fA-F]{40}$/.test(payer)) return void res.status(400).json({ error: 'payer must be a wallet address' });
+  const ctx = await quoter.begin({
+    method: 'GET',
+    path: '/api/premium',
+    header: (n) => (n.toLowerCase() === 'x-payer-address' ? payer : req.header(n)),
+    raw: req,
+  });
+  const i = ctx.info;
+  res.json({
     seller,
-    // A judge simulation run passes its own namespace so promo counters start at zero.
-    namespace: (req) => `${seller}:${req.header('x-argus-namespace') ?? 'live'}`,
-    description: 'Monad market signal (demo)',
-    log: (m) => console.log(m),
-  }),
-);
+    network,
+    payer: i.payer,
+    tierName: i.tierName,
+    price: i.price,
+    priceUsd: i.price === 'promo' ? price.promo : price.standard,
+    standardUsd: price.standard,
+    promoLeft: i.promoLeft,
+    promoCalls: 20,
+    operatorId: i.operatorId,
+    confidence: i.confidence,
+    reasons: i.reasons,
+    verdictSource: i.verdictSource,
+  });
+});
+app.get('/api/info', (_req, res) => res.json({ seller, network, payTo, price, promoCalls: 20, promoPerOperator: true, product: 'Monad market signal' }));
 
 app.get('/api/premium', (req, res) => {
   res.json({
